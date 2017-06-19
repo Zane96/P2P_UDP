@@ -1,6 +1,7 @@
 package com.zane.p2pclient.comman.parse;
 
 import com.zane.p2pclient.comman.Message;
+import com.zane.p2pclient.comman.send.IMessageSend;
 
 /**
  * 处理Message的责任链模式
@@ -10,9 +11,10 @@ import com.zane.p2pclient.comman.Message;
  */
 
 public abstract class AbstractParseMan {
-    protected AbstractParseMan nextParseMan;
+    public AbstractParseMan nextParseMan;
+    protected IMessageSend sendMan;
 
-    public abstract void send(Message message);
+    public abstract void send(Message message) throws Exception;
 
     public abstract Message receive(Message message);
 }

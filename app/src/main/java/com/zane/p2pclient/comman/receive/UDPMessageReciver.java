@@ -1,8 +1,10 @@
-package com.zane.p2pclient.comman;
+package com.zane.p2pclient.comman.receive;
 
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.zane.p2pclient.comman.Config;
+import com.zane.p2pclient.comman.Message;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -21,7 +23,7 @@ import io.reactivex.subjects.AsyncSubject;
  * Blog: zane96.github.io
  */
 
-public class MessageReciver extends Thread{
+public class UDPMessageReciver extends Thread implements IMessageReceiver{
 
     private DatagramSocket socket;
     private int byteLength;
@@ -30,18 +32,11 @@ public class MessageReciver extends Thread{
     private Gson gson;
     private OnReceiverListener listener;
 
-    public interface OnReceiverListener{
-        void onFailed();
-        void onConnectP();
-        void onConnectResult(String content, String extraNet, String intraNet);
-        void onConnectPResult();
-    }
-
     public void setOnReceiverFailedListener(OnReceiverListener listener) {
         this.listener = listener;
     }
 
-    public MessageReciver(DatagramSocket socket, int byteLength) {
+    public UDPMessageReciver(DatagramSocket socket, int byteLength) {
         this.socket = socket;
         this.byteLength = byteLength;
         gson = new Gson();
@@ -49,15 +44,7 @@ public class MessageReciver extends Thread{
         responseFlowable = subject.toFlowable(BackpressureStrategy.LATEST).map(new Function<String, Message>() {
             @Override
             public Message apply(@NonNull String data) throws Exception {
-                Message response = gson.fromJson(data, Message.class);
-                if (Config.MESSAGE_TYPE_CONNECT_P.equals(response.getMessageType())) {
-                    listener.onConnectP();
-                } else if (Config.MESSAGE_TYPE_CONNECT_RESULE.equals(response.getMessageType())) {
-                    listener.onConnectResult(response.getContent(), response.getExtraNet(), response.getIntraNet());
-                } else if (Config.MESSAGE_TYPE_CONNECT_P_RESULT.equals(response.getMessageType())) {
-                    listener.onConnectPResult();
-                }
-                return response;
+                return gson.fromJson(data, Message.class);
             }
         });
     }

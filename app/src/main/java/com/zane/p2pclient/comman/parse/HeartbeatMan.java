@@ -12,34 +12,19 @@ import com.zane.p2pclient.comman.send.UDPMessageSend;
  * Blog: zane96.github.io
  */
 
-public class HeartbeatMan extends Thread{
+public class HeartbeatMan extends AbstractParseMan{
 
-    private UDPMessageSend UDPMessageSend;
-    private Message heartPackage;
-
-    public HeartbeatMan(UDPMessageSend UDPMessageSend) {
-        this.UDPMessageSend = UDPMessageSend;
-        heartPackage = new Message.Builder()
-                               .setMessageType(Config.MESSAGE_TYPE_HEART)
-                               .setHost(MyPreferences.getInstance().getHost())
-                               .setPort(MyPreferences.getInstance().getPort())
-                               .build();
-    }
-
-    public void finish() {
-        interrupt();
+    public HeartbeatMan(UDPMessageSend sendMan) {
+        this.sendMan = sendMan;
     }
 
     @Override
-    public void run() {
-        super.run();
-        while (!isInterrupted()) {
-            try {
-                sleep(20000);
-                UDPMessageSend.sendMessage(heartPackage);
-            } catch (Exception e) {
-                finish();
-            }
-        }
+    public void send(Message message) throws Exception {
+
+    }
+
+    @Override
+    public Message receive(Message message) {
+        return null;
     }
 }

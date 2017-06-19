@@ -13,7 +13,9 @@ public final class Config {
 
 
     public static final String MESSAGE_TYPE_LOGIN = "login";
+    public static final String MESSAGE_TYPE_LOGIN_RESULT = "login_result";
     public static final String MESSAGE_TYPE_QUIT = "quit";
+    public static final String MESSAGE_TYPE_QUIT_RESULT = "quit_result";
     public static final String MESSAGE_TYPE_CONNECT = "connect"; //向服务器请求连接信息
     public static final String MESSAGE_TYPE_CONNECT_RESULE = "connect_result"; //服务器反馈
     public static final String MESSAGE_TYPE_CONNECT_P = "connect_p"; //端连接
