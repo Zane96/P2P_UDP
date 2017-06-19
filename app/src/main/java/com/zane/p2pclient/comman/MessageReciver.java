@@ -32,8 +32,9 @@ public class MessageReciver extends Thread{
 
     public interface OnReceiverListener{
         void onFailed();
-        void onConnect();
-        void onConnectResult(String extraNet, String intraNet);
+        void onConnectP();
+        void onConnectResult(String content, String extraNet, String intraNet);
+        void onConnectPResult();
     }
 
     public void setOnReceiverFailedListener(OnReceiverListener listener) {
@@ -50,10 +51,11 @@ public class MessageReciver extends Thread{
             public Message apply(@NonNull String data) throws Exception {
                 Message response = gson.fromJson(data, Message.class);
                 if (Config.MESSAGE_TYPE_CONNECT_P.equals(response.getMessageType())) {
-                    listener.onConnect();
-                }
-                if (Config.MESSAGE_TYPE_CONNECT_RESULE.equals(response.getMessageType())) {
-                    listener.onConnectResult(response.getExtraNet(), response.getIntraNet());
+                    listener.onConnectP();
+                } else if (Config.MESSAGE_TYPE_CONNECT_RESULE.equals(response.getMessageType())) {
+                    listener.onConnectResult(response.getContent(), response.getExtraNet(), response.getIntraNet());
+                } else if (Config.MESSAGE_TYPE_CONNECT_P_RESULT.equals(response.getMessageType())) {
+                    listener.onConnectPResult();
                 }
                 return response;
             }

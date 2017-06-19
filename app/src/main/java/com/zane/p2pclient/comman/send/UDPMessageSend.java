@@ -1,6 +1,7 @@
-package com.zane.p2pclient.comman;
+package com.zane.p2pclient.comman.send;
 
 import com.google.gson.Gson;
+import com.zane.p2pclient.comman.Message;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -13,17 +14,17 @@ import java.net.InetAddress;
  * Blog: zane96.github.io
  */
 
-public class MessageSend{
+public class UDPMessageSend implements IMessageSend{
 
     private DatagramSocket socket;
     private Gson gson;
 
-    public MessageSend(DatagramSocket socket) {
+    public UDPMessageSend(DatagramSocket socket) {
         this.socket = socket;
         gson = new Gson();
     }
 
-    public void sendMessaga(Message message) throws Exception{
+    public void sendMessage(Message message) throws Exception{
         if (!socket.isClosed() && socket.isConnected()) {
             String host = message.getHost();
             int port = message.getPort();

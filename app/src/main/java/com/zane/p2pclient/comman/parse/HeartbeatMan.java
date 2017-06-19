@@ -1,7 +1,9 @@
-package com.zane.p2pclient.comman;
+package com.zane.p2pclient.comman.parse;
 
 import com.zane.p2pclient.MyPreferences;
-import com.zane.p2pclient.client.SocketClient;
+import com.zane.p2pclient.comman.Config;
+import com.zane.p2pclient.comman.Message;
+import com.zane.p2pclient.comman.send.UDPMessageSend;
 
 /**
  * 通过心跳包维持UDP通道
@@ -10,13 +12,13 @@ import com.zane.p2pclient.client.SocketClient;
  * Blog: zane96.github.io
  */
 
-public class Heartbeat extends Thread{
+public class HeartbeatMan extends Thread{
 
-    private MessageSend messageSend;
+    private UDPMessageSend UDPMessageSend;
     private Message heartPackage;
 
-    public Heartbeat(MessageSend messageSend) {
-        this.messageSend = messageSend;
+    public HeartbeatMan(UDPMessageSend UDPMessageSend) {
+        this.UDPMessageSend = UDPMessageSend;
         heartPackage = new Message.Builder()
                                .setMessageType(Config.MESSAGE_TYPE_HEART)
                                .setHost(MyPreferences.getInstance().getHost())
@@ -34,7 +36,7 @@ public class Heartbeat extends Thread{
         while (!isInterrupted()) {
             try {
                 sleep(20000);
-                messageSend.sendMessaga(heartPackage);
+                UDPMessageSend.sendMessage(heartPackage);
             } catch (Exception e) {
                 finish();
             }

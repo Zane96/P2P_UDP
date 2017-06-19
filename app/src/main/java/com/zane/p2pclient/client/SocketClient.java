@@ -1,9 +1,8 @@
 package com.zane.p2pclient.client;
 
-import com.zane.p2pclient.MyPreferences;
-import com.zane.p2pclient.comman.Heartbeat;
+import com.zane.p2pclient.comman.parse.HeartbeatMan;
 import com.zane.p2pclient.comman.MessageReciver;
-import com.zane.p2pclient.comman.MessageSend;
+import com.zane.p2pclient.comman.send.UDPMessageSend;
 import com.zane.p2pclient.comman.Message;
 
 import java.net.DatagramSocket;
@@ -17,15 +16,15 @@ import java.net.DatagramSocket;
 public class SocketClient {
     private DatagramSocket clientSocket;
     private MessageReciver messageReciver;
-    private MessageSend messageSend;
-    private Heartbeat heartbeat;
+    private UDPMessageSend UDPMessageSend;
+    private HeartbeatMan heartbeat;
     private int byteLength;
 
-    public SocketClient(int byteLegth) throws Exception{
-        clientSocket = new DatagramSocket(9000);
+    public SocketClient(int byteLegth, int port) throws Exception{
+        clientSocket = new DatagramSocket(port);
         this.byteLength = byteLegth;
-        messageSend = new MessageSend(clientSocket);
-        heartbeat = new Heartbeat(messageSend);
+        UDPMessageSend = new UDPMessageSend(clientSocket);
+        heartbeat = new HeartbeatMan(UDPMessageSend);
         initReciver();
     }
 
@@ -35,7 +34,7 @@ public class SocketClient {
      * @throws Exception
      */
     public void send(Message message) throws Exception{
-        messageSend.sendMessaga(message);
+        UDPMessageSend.sendMessage(message);
     }
 
     /**
@@ -50,21 +49,28 @@ public class SocketClient {
     private void initReciver() {
         messageReciver = new MessageReciver(clientSocket, byteLength);
         messageReciver.setOnReceiverFailedListener(new MessageReciver.OnReceiverListener() {
+
+            //接收消息的通道断裂
             @Override
             public void onFailed() {
                 restartReceiver();
             }
 
+            //接收到尝试
             @Override
-            public void onConnect() {
-                heartbeat.start();
+            public void onConnectP() {
+
             }
 
             @Override
-            public void onConnectResult(String extraNet, String intraNet) {
-                //先全部默认存储外网IP
-                MyPreferences.getInstance().putHost(extraNet.substring(0, extraNet.indexOf(":") + 1));
-                MyPreferences.getInstance().putPort(Integer.valueOf(extraNet.substring(extraNet.indexOf(":"), extraNet.length())));
+            public void onConnectResult(String content, String extraNet, String intraNet) {
+
+            }
+
+            //通道成功建立
+            @Override
+            public void onConnectPResult() {
+
             }
         });
         messageReciver.start();

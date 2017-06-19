@@ -1,11 +1,7 @@
 package com.zane.p2pclient;
 
-import android.content.SharedPreferences;
-import android.net.wifi.WifiInfo;
-import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -13,64 +9,90 @@ import com.zane.p2pclient.client.SocketClient;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.Message;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 
 public class MainActivity extends AppCompatActivity {
 
     private SocketClient socketClient;
-
+    private TextView textInfo;
+    private StringBuilder sb;
+    private String intraNet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        try {
-            execCommand("netcfg");
-        } catch (IOException e) {
-            e.printStackTrace();
-            Log.i("testshell", "err");
+        textInfo = (TextView) findViewById(R.id.text_message);
+        sb = new StringBuilder("Init!~");
+        init();
+
+        if (socketClient != null && intraNet != null) {
+            final String finalIntraNet = intraNet;
+
+            //login
+            findViewById(R.id.btn_login).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Message message = new Message.Builder()
+                                              .setMessageType(Config.MESSAGE_TYPE_LOGIN)
+                                              .setIntraNet(finalIntraNet)
+                                              .setHost(Config.SERVER_HOST)
+                                              .setPort(Config.SERVER_PORT)
+                                              .setContent("Zane")
+                                              .build();
+                    try {
+                        socketClient.send(message);
+                    } catch (Exception e) {
+                        flushInfo("Send LoginMessage error: " + e.getMessage());
+                    }
+                }
+            });
+
+            //quit
+            findViewById(R.id.btn_quit).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Message message = new Message.Builder()
+                                              .setMessageType(Config.MESSAGE_TYPE_QUIT)
+                                              .setHost(Config.SERVER_HOST)
+                                              .setPort(Config.SERVER_PORT)
+                                              .setContent("Zane")
+                                              .build();
+                    try {
+                        socketClient.send(message);
+                    } catch (Exception e) {
+                        flushInfo("Send QuitMessage error: " + e.getMessage());
+                    }
+                }
+            });
+
+            findViewById(R.id.btn_connect).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Message message = new Message.Builder().setMessageType(Config.MESSAGE_TYPE_CONNECT)
+                }
+            });
         }
 
-        TextView textMessage = (TextView) findViewById(R.id.text_message);
+    }
+
+    private void init() {
+        try {
+            intraNet = Utils.getIntrxNet();
+        } catch (IOException e) {
+            flushInfo("GetIntraNet error: " + e.getMessage());
+        }
 
         try {
             socketClient = new SocketClient(1024);
         } catch (Exception e) {
-            textMessage.setText("SocketClient init error: " + e.getMessage());
-        }
-
-        if (socketClient != null) {
-            findViewById(R.id.btn_login).setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    //Message message = new Message.Builder().setHost(Config.HOST).setPort(Config.PORT)
-                    //socketClient.send();
-                }
-            });
+            flushInfo("GetIntraNet error: " + e.getMessage());
         }
     }
 
-    public void execCommand(String command) throws IOException {
-        Runtime runtime = Runtime.getRuntime();
-        Process proc = runtime.exec(command);
-
-        InputStream inputstream = proc.getInputStream();
-        InputStreamReader inputstreamreader = new InputStreamReader(inputstream);
-        BufferedReader bufferedreader = new BufferedReader(inputstreamreader);
-        // read the ls output
-        String line = "";
-        StringBuilder sb = new StringBuilder(line);
-        while ((line = bufferedreader.readLine()) != null) {
-            //System.out.println(line);
-            sb.append(line);
-            sb.append('\n');
-        }
-        Log.i("testshell", sb.toString());
-
+    private void flushInfo(String info) {
+        sb.append(info).append("\n");
+        textInfo.setText(sb.toString());
     }
-
 }
