@@ -32,4 +32,12 @@ public class Utils {
         String host = intraNet.substring(intraNet.indexOf("P") + 1, intraNet.indexOf("0x")).trim().replace("/", ":");
         return host;
     }
+
+    public static String getHost(String address) {
+        return address.substring(0, address.indexOf(":"));
+    }
+
+    public static int getPort(String address) {
+        return Integer.valueOf(address.substring(address.indexOf(":") + 1, address.length()));
+    }
 }

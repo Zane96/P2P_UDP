@@ -1,9 +1,15 @@
 package com.zane.p2pclient.comman.parse;
 
+import android.util.Log;
+
 import com.zane.p2pclient.MyPreferences;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.Message;
 import com.zane.p2pclient.comman.send.UDPMessageSend;
+
+import java.io.IOException;
+
+import io.reactivex.Flowable;
 
 /**
  * 通过心跳包维持UDP通道
@@ -19,12 +25,28 @@ public class HeartbeatMan extends AbstractParseMan{
     }
 
     @Override
-    public void send(Message message) throws Exception {
-
+    public void send(Message message) throws IOException {
+        String messageType = message.getMessageType();
+        if (Config.MESSAGE_TYPE_HEART.equals(messageType)) {
+            sendMan.sendMessage(message);
+        } else {
+            nextParseMan.send(message);
+        }
     }
 
     @Override
-    public Message receive(Message message) {
+    public void receive(Message message) throws NoMatchParserMan{
+        String messageType = message.getMessageType();
+        if (!Config.MESSAGE_TYPE_HEART.equals(messageType)) {
+            nextParseMan.receive(message);
+            Log.i("receive", "Abanbon the heartbeat package-------");
+        } else {
+            nextParseMan.receive(message);
+        }
+    }
+
+    @Override
+    public Flowable<String> getFlowable() {
         return null;
     }
 }

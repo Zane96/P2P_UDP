@@ -3,6 +3,7 @@ package com.zane.p2pclient.comman.send;
 import com.google.gson.Gson;
 import com.zane.p2pclient.comman.Message;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -25,7 +26,7 @@ public class UDPMessageSend implements IMessageSend{
     }
 
     @Override
-    public void sendMessage(Message message) throws Exception{
+    public void sendMessage(Message message) throws IOException{
         if (!socket.isClosed() && socket.isConnected()) {
             String host = message.getHost();
             int port = message.getPort();

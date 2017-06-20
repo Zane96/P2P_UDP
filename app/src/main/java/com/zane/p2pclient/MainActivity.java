@@ -3,6 +3,8 @@ package com.zane.p2pclient;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.zane.p2pclient.client.SocketClient;
@@ -18,6 +20,13 @@ public class MainActivity extends AppCompatActivity {
     private StringBuilder sb;
     private String intraNet;
 
+    private Button btnLogin;
+    private Button btnQuit;
+    private Button btnConnect;
+    private Button btnDisConnect;
+    private Button btnSend;
+    private EditText editMessage;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,7 +40,8 @@ public class MainActivity extends AppCompatActivity {
             final String finalIntraNet = intraNet;
 
             //login
-            findViewById(R.id.btn_login).setOnClickListener(new View.OnClickListener() {
+            btnLogin = (Button) findViewById(R.id.btn_login);
+            btnLogin.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     Message message = new Message.Builder()
@@ -50,7 +60,8 @@ public class MainActivity extends AppCompatActivity {
             });
 
             //quit
-            findViewById(R.id.btn_quit).setOnClickListener(new View.OnClickListener() {
+            btnQuit = (Button) findViewById(R.id.btn_quit);
+            btnQuit.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     Message message = new Message.Builder()
@@ -67,14 +78,66 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
-            findViewById(R.id.btn_connect).setOnClickListener(new View.OnClickListener() {
+            //连接
+            btnConnect = (Button) findViewById(R.id.btn_connect);
+            btnConnect.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Message message = new Message.Builder().setMessageType(Config.MESSAGE_TYPE_CONNECT)
+                    Message message = new Message.Builder()
+                                              .setMessageType(Config.MESSAGE_TYPE_CONNECT)
+                                              .setHost(Config.SERVER_HOST)
+                                              .setPort(Config.SERVER_PORT)
+                                              .setContent("SB")
+                                              .build();
+
+                    try {
+                        socketClient.send(message);
+                    } catch (Exception e) {
+                        flushInfo("Send ConnectMessage error: " + e.getMessage());
+                    }
+                }
+            });
+
+            //断开连接
+            btnDisConnect = (Button) findViewById(R.id.btn_disconnect);
+            btnDisConnect.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Message message = new Message.Builder()
+                                              .setMessageType(Config.MESSAGE_TYPE_DISCONNECT)
+                                              .setHost(MyPreferences.getInstance().getHost())
+                                              .setPort(MyPreferences.getInstance().getPort())
+                                              .setContent("disconnect")
+                                              .build();
+
+                    try {
+                        socketClient.send(message);
+                    } catch (Exception e) {
+                        flushInfo("Send DisconnectMessage error: " + e.getMessage());
+                    }
+                }
+            });
+
+            //发送数据
+            btnSend = (Button) findViewById(R.id.btn_send);
+            btnSend.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Message message = new Message.Builder()
+                                              .setMessageType(Config.MESSAGE_TYPE_SEND)
+                                              .setHost(MyPreferences.getInstance().getHost())
+                                              .setPort(MyPreferences.getInstance().getPort())
+                                              .setContent(editMessage.getText().toString())
+                                              .build();
+
+                    try {
+                        socketClient.send(message);
+                    } catch (Exception e) {
+                        flushInfo("Send SendMessage error: " + e.getMessage());
+                    }
                 }
             });
         }
-
     }
 
     private void init() {
@@ -85,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         try {
-            socketClient = new SocketClient(1024);
+            socketClient = new SocketClient(1024, Config.PHONE_PORT);
         } catch (Exception e) {
             flushInfo("GetIntraNet error: " + e.getMessage());
         }

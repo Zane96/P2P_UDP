@@ -1,10 +1,21 @@
 package com.zane.p2pclient.comman.parse;
 
+import android.util.Log;
+
+import com.zane.p2pclient.MyPreferences;
+import com.zane.p2pclient.Utils;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.Message;
-import com.zane.p2pclient.comman.send.IMessageSend;
+import com.zane.p2pclient.comman.MessageQueue;
 import com.zane.p2pclient.comman.send.TCPMessageSend;
-import com.zane.p2pclient.comman.send.UDPMessageSend;
+
+import java.io.IOException;
+
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.functions.Function;
+import io.reactivex.subjects.AsyncSubject;
 
 /**
  * 负责建立连接的逻辑
@@ -29,12 +40,27 @@ import com.zane.p2pclient.comman.send.UDPMessageSend;
 
 public class ServerConnectMan extends AbstractParseMan{
 
+    private Flowable<String> flowable;
+    private AsyncSubject<Message> subject;
+
     public ServerConnectMan(TCPMessageSend sendMan) {
         this.sendMan = sendMan;
+        subject = AsyncSubject.create();
+        flowable = subject.toFlowable(BackpressureStrategy.LATEST).map(new Function<Message, String>() {
+            @Override
+            public String apply(@NonNull Message message) throws Exception {
+                Log.i("receive", "Receive message: " + message.toString());
+                return message.getMessageType();
+            }
+        });
+    }
+
+    public Flowable<String> getFlowable() {
+        return flowable;
     }
 
     @Override
-    public void send(Message message) throws Exception{
+    public void send(Message message) throws IOException{
         String messageType = message.getMessageType();
         if (Config.MESSAGE_TYPE_LOGIN.equals(messageType) || Config.MESSAGE_TYPE_CONNECT.equals(messageType)
                 || Config.MESSAGE_TYPE_QUIT.equals(messageType)) {
@@ -45,7 +71,26 @@ public class ServerConnectMan extends AbstractParseMan{
     }
 
     @Override
-    public Message receive(Message message) {
-        return null;
+    public void receive(Message message) throws NoMatchParserMan{
+        String messageType = message.getMessageType();
+        if (Config.MESSAGE_TYPE_LOGIN_RESULT.equals(messageType) || Config.MESSAGE_TYPE_QUIT_RESULT.equals(messageType)) {
+            subject.onNext(message);
+        } else if (Config.MESSAGE_TYPE_CONNECT_RESULE.equals(messageType)) {
+            //先统一存储对方的内网二元组
+            String intraNet = message.getIntraNet();
+            String host = Utils.getHost(intraNet);
+            int port = Utils.getPort(intraNet);
+            MyPreferences.getInstance().putHost(host);
+            MyPreferences.getInstance().putPort(port);
+
+            //发送端对端连接请求
+            MessageQueue.getInstance().put(new Message.Builder()
+                                                   .setMessageType(Config.MESSAGE_TYPE_CONNECT_P)
+                                                   .setHost(host)
+                                                   .setPort(port)
+                                                   .build());
+        } else {
+            throw new NoMatchParserMan("No Match ParseMan!!!~");
+        }
     }
 }

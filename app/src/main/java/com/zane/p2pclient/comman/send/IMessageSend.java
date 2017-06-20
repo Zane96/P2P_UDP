@@ -2,6 +2,8 @@ package com.zane.p2pclient.comman.send;
 
 import com.zane.p2pclient.comman.Message;
 
+import java.io.IOException;
+
 /**
  * TCP/UDP发送数据的工具抽象
  * Created by Zane on 2017/6/19.
@@ -15,5 +17,5 @@ public interface IMessageSend {
      * 发送的具体操作在责任链中确定
      * @param message
      */
-    void sendMessage(Message message) throws Exception;
+    void sendMessage(Message message) throws IOException;
 }

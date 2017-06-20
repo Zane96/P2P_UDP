@@ -5,6 +5,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.Message;
+import com.zane.p2pclient.comman.MessageQueue;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -27,8 +28,6 @@ public class UDPMessageReciver extends Thread implements IMessageReceiver{
 
     private DatagramSocket socket;
     private int byteLength;
-    private Flowable<Message> responseFlowable;
-    private AsyncSubject<String> subject;
     private Gson gson;
     private OnReceiverListener listener;
 
@@ -40,17 +39,13 @@ public class UDPMessageReciver extends Thread implements IMessageReceiver{
         this.socket = socket;
         this.byteLength = byteLength;
         gson = new Gson();
-        subject = AsyncSubject.create();
-        responseFlowable = subject.toFlowable(BackpressureStrategy.LATEST).map(new Function<String, Message>() {
-            @Override
-            public Message apply(@NonNull String data) throws Exception {
-                return gson.fromJson(data, Message.class);
-            }
-        });
-    }
-
-    public Flowable<Message> getFlowable() {
-        return responseFlowable;
+//        subject = AsyncSubject.create();
+//        responseFlowable = subject.toFlowable(BackpressureStrategy.LATEST).map(new Function<String, Message>() {
+//            @Override
+//            public Message apply(@NonNull String data) throws Exception {
+//                return gson.fromJson(data, Message.class);
+//            }
+//        });
     }
 
     public void finish() {
@@ -65,12 +60,9 @@ public class UDPMessageReciver extends Thread implements IMessageReceiver{
                 DatagramPacket packet = new DatagramPacket(new byte[byteLength], byteLength);
                 socket.receive(packet);
                 byte[] responseData = packet.getData();
-                subject.onNext(new String(responseData));
 
-                //Log应该写一个拦截器
-                Log.i("response", "response IP: " + packet.getAddress().toString() + " port: " + packet.getPort());
+                MessageQueue.getInstance().put(gson.fromJson(new String(responseData), Message.class));
             } catch (IOException e) {
-                Log.i("response", "response failed: " + e.getMessage());
                 finish();
                 if (listener != null) {
                     listener.onFailed();

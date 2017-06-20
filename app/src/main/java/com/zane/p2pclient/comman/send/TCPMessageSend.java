@@ -3,6 +3,7 @@ package com.zane.p2pclient.comman.send;
 import com.google.gson.Gson;
 import com.zane.p2pclient.comman.Message;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 
@@ -23,7 +24,7 @@ public class TCPMessageSend implements IMessageSend{
     }
 
     @Override
-    public void sendMessage(Message message) throws Exception{
+    public void sendMessage(Message message) throws IOException{
         PrintWriter pw = new PrintWriter(os);
         pw.print(gson.toJson(message));
         pw.flush();

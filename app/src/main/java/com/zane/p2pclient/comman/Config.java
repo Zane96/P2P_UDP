@@ -19,7 +19,7 @@ public final class Config {
     public static final String MESSAGE_TYPE_CONNECT = "connect"; //向服务器请求连接信息
     public static final String MESSAGE_TYPE_CONNECT_RESULE = "connect_result"; //服务器反馈
     public static final String MESSAGE_TYPE_CONNECT_P = "connect_p"; //端连接
-    public static final String MESSAGE_TYPE_CONNECT_P_RESULT = "conect_p_result"; //端连接反馈
+    public static final String MESSAGE_TYPE_DISCONNECT = "disconnect"; //端对端断开连接
     public static final String MESSAGE_TYPE_SEND = "send";
     public static final String MESSAGE_TYPE_HEART = "heart";
 

@@ -17,6 +17,9 @@ public class Message {
     private String messageType;
     private String content;
 
+    private String type;//send or receive
+    private int tryTime = 0;//尝试五次
+
     public Message(String extraNet, String intraNet, String host, int port, String messageType, String content) {
         this.extraNet = extraNet;
         this.intraNet = intraNet;
@@ -72,6 +75,34 @@ public class Message {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public int getTryTime() {
+        return tryTime;
+    }
+
+    public void setTryTime(int tryTime) {
+        this.tryTime = tryTime;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    @Override
+    public String toString() {
+        return "type: " + type +
+                       " tryTime: " + tryTime +
+                       " extraNet: " + extraNet +
+                       " intraNet: " + intraNet +
+                       " host: " + host +
+                       " post : " + port +
+                       " messageType: " + messageType +
+                       " content: " + content;
     }
 
     public static class Builder{
