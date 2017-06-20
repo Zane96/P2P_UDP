@@ -3,6 +3,7 @@ package com.zane.p2pclient.comman;
 import android.util.Log;
 
 import com.zane.p2pclient.comman.parse.AbstractParseMan;
+import com.zane.p2pclient.comman.parse.NoMatchParserMan;
 
 import java.io.IOException;
 
@@ -51,6 +52,8 @@ public class MessageDispatcher extends Thread{
                 interrupt();
             } catch (IOException e) {
                 messageQueue.put(message);
+            } catch (NoMatchParserMan e) {
+                Log.i("MessageDispatcher", "Message " + message.toString() + " has no parse man");
             }
         }
     }

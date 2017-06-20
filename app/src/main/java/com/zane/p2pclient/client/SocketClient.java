@@ -21,6 +21,7 @@ import com.zane.p2pclient.comman.send.UDPMessageSend;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 import io.reactivex.Flowable;
 
@@ -47,14 +48,29 @@ public class SocketClient {
     private Flowable<String> sendFlowable;
     private Flowable<String> serverConnectFlowable;
 
-    public SocketClient(int byteLegth, int port) throws Exception{
-        clientSocket = new DatagramSocket(port);
-        socket = new Socket(Config.SERVER_HOST, Config.SERVER_PORT);
+    public SocketClient(int byteLegth, int port){
+        try {
+            clientSocket = new DatagramSocket(port);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    socket = new Socket(Config.SERVER_HOST, Config.SERVER_PORT);
+                    initTCPReiver();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
         this.byteLength = byteLegth;
         udpMessageSend = new UDPMessageSend(clientSocket);
 
         initUDPReciver();
-        initTCPReiver();
         initParser();
 
         dispatcher = new MessageDispatcher(headParser);
@@ -135,7 +151,7 @@ public class SocketClient {
         heartbeatMan.nextParseMan = sendMan;
         sendMan.nextParseMan = serverConnectMan;
 
-        connectFlowable = heartbeatMan.getFlowable();
+        connectFlowable = headParser.getFlowable();
         sendFlowable = sendMan.getFlowable();
         serverConnectFlowable = serverConnectMan.getFlowable();
     }

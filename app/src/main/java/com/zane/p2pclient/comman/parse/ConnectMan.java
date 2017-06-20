@@ -41,6 +41,7 @@ public class ConnectMan extends AbstractParseMan{
         });
     }
 
+    @Override
     public Flowable<String> getFlowable() {
         return flowable;
     }

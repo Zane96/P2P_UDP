@@ -89,6 +89,7 @@ public class ServerConnectMan extends AbstractParseMan{
                                                    .setHost(host)
                                                    .setPort(port)
                                                    .build());
+            subject.onNext(message);
         } else {
             throw new NoMatchParserMan("No Match ParseMan!!!~");
         }

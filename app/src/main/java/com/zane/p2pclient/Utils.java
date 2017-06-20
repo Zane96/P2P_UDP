@@ -23,14 +23,14 @@ public class Utils {
         InputStreamReader inputstreamreader = new InputStreamReader(inputstream);
         BufferedReader bufferedreader = new BufferedReader(inputstreamreader);
         // read the output
-        String intraNet = "";
+        String intraNet = null;
         while ((intraNet = bufferedreader.readLine()) != null) {
             if (intraNet.startsWith("wlan")) {
-                break;
+                String address = intraNet.substring(intraNet.indexOf("P") + 1, intraNet.indexOf("0x")).trim().replace("/", ":");
+                return address;
             }
         }
-        String host = intraNet.substring(intraNet.indexOf("P") + 1, intraNet.indexOf("0x")).trim().replace("/", ":");
-        return host;
+        return intraNet;
     }
 
     public static String getHost(String address) {

@@ -1,5 +1,7 @@
 package com.zane.p2pclient.comman.receive;
 
+import android.util.Log;
+
 import com.google.gson.Gson;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.Message;
@@ -36,13 +38,6 @@ public class TCPMessageReceiver extends Thread implements IMessageReceiver{
     public TCPMessageReceiver(Socket socket) {
         this.socket = socket;
         gson = new Gson();
-//        subject = AsyncSubject.create();
-//        responseFlowable = subject.toFlowable(BackpressureStrategy.LATEST).map(new Function<String, Message>() {
-//            @Override
-//            public Message apply(@NonNull String data) throws Exception {
-//                return gson.fromJson(data, Message.class);
-//            }
-//        });
     }
 
     public void finish() {
