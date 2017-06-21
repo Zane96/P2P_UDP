@@ -13,6 +13,7 @@ import io.reactivex.Flowable;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.functions.Function;
 import io.reactivex.subjects.AsyncSubject;
+import io.reactivex.subjects.PublishSubject;
 
 /**
  * 发送消息，接收消息
@@ -24,11 +25,11 @@ import io.reactivex.subjects.AsyncSubject;
 public class SendMan extends AbstractParseMan{
 
     private Flowable<String> flowable;
-    private AsyncSubject<Message> subject;
+    private PublishSubject<Message> subject;
 
     public SendMan(UDPMessageSend sendMan) {
         this.sendMan = sendMan;
-        subject = AsyncSubject.create();
+        subject = PublishSubject.create();
         flowable = subject.toFlowable(BackpressureStrategy.LATEST).map(new Function<Message, String>() {
             @Override
             public String apply(@NonNull Message message) throws Exception {

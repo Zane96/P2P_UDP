@@ -14,6 +14,7 @@ import io.reactivex.Flowable;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.functions.Function;
 import io.reactivex.subjects.AsyncSubject;
+import io.reactivex.subjects.PublishSubject;
 
 /**
  * 控制连接，断开连接和心跳包的开始结束
@@ -25,13 +26,13 @@ import io.reactivex.subjects.AsyncSubject;
 public class ConnectMan extends AbstractParseMan{
 
     private HeartbeatDispatcher heartbeatDispatcher;
-    private AsyncSubject<Message> subject;
+    private PublishSubject<Message> subject;
     private Flowable<String> flowable;
 
     public ConnectMan(UDPMessageSend sendMan, HeartbeatDispatcher heartbeatDispatcher) {
         this.sendMan = sendMan;
         this.heartbeatDispatcher = heartbeatDispatcher;
-        subject = AsyncSubject.create();
+        subject = PublishSubject.create();
         flowable = subject.toFlowable(BackpressureStrategy.LATEST).map(new Function<Message, String>() {
             @Override
             public String apply(@NonNull Message message) throws Exception {

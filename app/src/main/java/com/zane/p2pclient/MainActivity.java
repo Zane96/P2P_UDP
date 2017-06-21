@@ -20,6 +20,16 @@ import org.reactivestreams.Subscription;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.FlowableEmitter;
+import io.reactivex.FlowableOnSubscribe;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.functions.Consumer;
+import io.reactivex.subjects.AsyncSubject;
+import io.reactivex.subjects.PublishSubject;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -38,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
 
         textInfo = (TextView) findViewById(R.id.text_message);
@@ -196,6 +207,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSubscribe(Subscription s) {
                 subscription = s;
+                s.request(Integer.MAX_VALUE);
             }
 
             @Override
@@ -228,6 +240,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSubscribe(Subscription s) {
                 subscription = s;
+                s.request(Integer.MAX_VALUE);
             }
 
             @Override
@@ -252,6 +265,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSubscribe(Subscription s) {
                 subscription = s;
+                s.request(Integer.MAX_VALUE);
             }
 
             @Override
