@@ -43,7 +43,7 @@ public class MessageDispatcher extends Thread{
                     } else if ("receive".equals(message.getType())) {
                         headParser.receive(message);
                     } else {
-                        Log.i("MessageDispatcher", "Message without type!");
+                        Log.i("MessageDispatcher", "Message without type! " + message.toString());
                     }
                 } else {
                     Log.i("MessageDispatcher", "Failed to send message in 5 times: " + message.toString());
@@ -51,6 +51,7 @@ public class MessageDispatcher extends Thread{
             } catch (InterruptedException e) {
                 interrupt();
             } catch (IOException e) {
+                Log.i("server", "send error: " + e.getMessage());
                 messageQueue.put(message);
             } catch (NoMatchParserMan e) {
                 Log.i("MessageDispatcher", "Message " + message.toString() + " has no parse man");

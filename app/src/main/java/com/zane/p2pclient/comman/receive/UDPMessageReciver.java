@@ -39,13 +39,6 @@ public class UDPMessageReciver extends Thread implements IMessageReceiver{
         this.socket = socket;
         this.byteLength = byteLength;
         gson = new Gson();
-//        subject = AsyncSubject.create();
-//        responseFlowable = subject.toFlowable(BackpressureStrategy.LATEST).map(new Function<String, Message>() {
-//            @Override
-//            public Message apply(@NonNull String data) throws Exception {
-//                return gson.fromJson(data, Message.class);
-//            }
-//        });
     }
 
     public void finish() {
@@ -58,10 +51,15 @@ public class UDPMessageReciver extends Thread implements IMessageReceiver{
         while (!isInterrupted()) {
             try {
                 DatagramPacket packet = new DatagramPacket(new byte[byteLength], byteLength);
+                Log.i("server", "start listen udp package");
+                //socket.setSoTimeout(1000);
                 socket.receive(packet);
                 byte[] responseData = packet.getData();
 
-                MessageQueue.getInstance().put(gson.fromJson(new String(responseData), Message.class));
+                Message message = gson.fromJson(new String(responseData), Message.class);
+                message.setType("receive");
+                Log.i("server", "receive udp: " + message.toString());
+                MessageQueue.getInstance().put(message);
             } catch (IOException e) {
                 finish();
                 if (listener != null) {

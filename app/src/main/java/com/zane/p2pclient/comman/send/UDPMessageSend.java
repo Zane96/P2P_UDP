@@ -1,5 +1,7 @@
 package com.zane.p2pclient.comman.send;
 
+import android.util.Log;
+
 import com.google.gson.Gson;
 import com.zane.p2pclient.comman.Message;
 
@@ -27,10 +29,11 @@ public class UDPMessageSend implements IMessageSend{
 
     @Override
     public void sendMessage(Message message) throws IOException{
-        if (!socket.isClosed() && socket.isConnected()) {
+        if (!socket.isClosed()) {
             String host = message.getHost();
             int port = message.getPort();
             if (!"".equals(host) && port >= 0) {
+                Log.i("server", "send udp: " + gson.toJson(message));
                 byte[] datas = gson.toJson(message).getBytes();
                 DatagramPacket packet = new DatagramPacket(datas, datas.length, InetAddress.getByName(host), port);
                 socket.send(packet);

@@ -1,11 +1,14 @@
 package com.zane.p2pclient.comman.send;
 
+import android.util.Log;
+
 import com.google.gson.Gson;
 import com.zane.p2pclient.comman.Message;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.Socket;
 
 /**
  * Created by Zane on 2017/6/19.
@@ -15,18 +18,19 @@ import java.io.PrintWriter;
 
 public class TCPMessageSend implements IMessageSend{
 
-    private OutputStream os;
+    private Socket socket;
     private Gson gson;
 
-    public TCPMessageSend(OutputStream os){
-        this.os = os;
+    public TCPMessageSend(Socket socket){
+        this.socket = socket;
         gson = new Gson();
     }
 
     @Override
     public void sendMessage(Message message) throws IOException{
-        PrintWriter pw = new PrintWriter(os);
+        PrintWriter pw = new PrintWriter(socket.getOutputStream());
         pw.print(gson.toJson(message));
+        Log.i("server", gson.toJson(message));
         pw.flush();
     }
 }

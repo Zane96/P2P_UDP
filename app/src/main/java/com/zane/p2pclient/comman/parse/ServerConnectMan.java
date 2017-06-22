@@ -7,6 +7,7 @@ import com.zane.p2pclient.Utils;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.Message;
 import com.zane.p2pclient.comman.MessageQueue;
+import com.zane.p2pclient.comman.receive.TCPMessageReceiver;
 import com.zane.p2pclient.comman.send.TCPMessageSend;
 
 import java.io.IOException;
@@ -44,8 +45,11 @@ public class ServerConnectMan extends AbstractParseMan{
     private Flowable<String> flowable;
     private PublishSubject<Message> subject;
 
-    public ServerConnectMan(TCPMessageSend sendMan) {
+    private TCPMessageReceiver receiver;
+
+    public ServerConnectMan(TCPMessageSend sendMan, TCPMessageReceiver receiver) {
         this.sendMan = sendMan;
+        this.receiver = receiver;
         subject = PublishSubject.create();
         flowable = subject.toFlowable(BackpressureStrategy.LATEST).map(new Function<Message, String>() {
             @Override
@@ -63,9 +67,21 @@ public class ServerConnectMan extends AbstractParseMan{
     @Override
     public void send(Message message) throws IOException{
         String messageType = message.getMessageType();
-        if (Config.MESSAGE_TYPE_LOGIN.equals(messageType) || Config.MESSAGE_TYPE_CONNECT.equals(messageType)
-                || Config.MESSAGE_TYPE_QUIT.equals(messageType)) {
+        if (Config.MESSAGE_TYPE_CONNECT.equals(messageType) || Config.MESSAGE_TYPE_QUIT.equals(messageType)) {
             sendMan.sendMessage(message);
+            receiver.read();
+        } else if (Config.MESSAGE_TYPE_LOGIN.equals(messageType)) {
+            //发送一个打通和服务端UDP通道的包
+            Message messageUdp = new Message.Builder()
+                                         .setMessageType(Config.MESSAGE_TYPE_SERVER_UDP)
+                                         .setHost(Config.SERVER_HOST)
+                                         .setPort(Config.SERVER_PORT)
+                                         .build();
+            messageUdp.setType("send");
+            MessageQueue.getInstance().put(messageUdp);
+
+            sendMan.sendMessage(message);
+            receiver.read();
         } else {
             nextParseMan.send(message);
         }
@@ -85,11 +101,14 @@ public class ServerConnectMan extends AbstractParseMan{
             MyPreferences.getInstance().putPort(port);
 
             //发送端对端连接请求
-            MessageQueue.getInstance().put(new Message.Builder()
-                                                   .setMessageType(Config.MESSAGE_TYPE_CONNECT_P)
-                                                   .setHost(host)
-                                                   .setPort(port)
-                                                   .build());
+            Message messageSend = new Message.Builder()
+                                          .setMessageType(Config.MESSAGE_TYPE_CONNECT_P)
+                                          .setHost(host)
+                                          .setPort(port)
+                                          .build();
+            messageSend.setType("send");
+            MessageQueue.getInstance().put(message);
+
             subject.onNext(message);
         } else {
             throw new NoMatchParserMan("No Match ParseMan!!!~");

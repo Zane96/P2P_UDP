@@ -53,7 +53,8 @@ public class ConnectMan extends AbstractParseMan{
         if (Config.MESSAGE_TYPE_CONNECT_P.equals(messageType)) {
             sendMan.sendMessage(message);
             heartbeatDispatcher.start();
-        } else if (Config.MESSAGE_TYPE_DISCONNECT.equals(messageType)) {
+        } else if (Config.MESSAGE_TYPE_DISCONNECT.equals(messageType) || Config.MESSAGE_TYPE_SERVER_UDP.equals(messageType)) {
+            Log.i("server", "connect " + message.toString());
             sendMan.sendMessage(message);
         } else {
             nextParseMan.send(message);

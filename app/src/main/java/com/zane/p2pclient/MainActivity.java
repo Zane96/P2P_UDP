@@ -10,6 +10,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
 import com.zane.p2pclient.client.SocketClient;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.Message;
@@ -103,6 +104,17 @@ public class MainActivity extends AppCompatActivity {
         }
 
         socketClient = new SocketClient(1024, Config.PHONE_PORT);
+        socketClient.setOnSocketInitListener(new SocketClient.OnSocketInitListener() {
+            @Override
+            public void initSuccess() {
+                registListener();
+            }
+
+            @Override
+            public void initFailed(IOException e) {
+                flushInfo("Init TCP Socket error: " + e.getMessage());
+            }
+        });
     }
 
     private void initLogic(final String finalIntraNet) {
@@ -202,6 +214,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        btnSend.setEnabled(false);
+        btnQuit.setEnabled(false);
+        btnDisConnect.setEnabled(false);
+        btnConnect.setEnabled(false);
+        btnLogin.setEnabled(true);
+    }
+
+    private void registListener() {
         socketClient.getServerConnectFlowable().subscribe(new Subscriber<String>() {
             Subscription subscription;
             @Override
@@ -290,12 +310,6 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
-        btnSend.setEnabled(false);
-        btnQuit.setEnabled(false);
-        btnDisConnect.setEnabled(false);
-        btnConnect.setEnabled(false);
-        btnLogin.setEnabled(true);
     }
 
     private void flushInfo(String info) {

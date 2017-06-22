@@ -1,5 +1,7 @@
 package com.zane.p2pclient.client;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.zane.p2pclient.comman.Config;
@@ -24,6 +26,8 @@ import java.net.Socket;
 import java.net.SocketException;
 
 import io.reactivex.Flowable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.subjects.BehaviorSubject;
 
 /**
  * Created by Zane on 2017/6/17.
@@ -48,6 +52,34 @@ public class SocketClient {
     private Flowable<String> sendFlowable;
     private Flowable<String> serverConnectFlowable;
 
+    private OnSocketInitListener listener;
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(android.os.Message msg) {
+            switch (msg.what) {
+                case 0:
+                    tcpMessageSend = new TCPMessageSend(socket);
+                    heartbeatDispatcher = new HeartbeatDispatcher();
+                    initTCPReiver();
+                    initParser();
+                    dispatcher = new MessageDispatcher(headParser);
+                    dispatcher.start();
+                    listener.initSuccess();
+
+                    break;
+            }
+        }
+    };
+
+    public interface OnSocketInitListener{
+        void initSuccess();
+        void initFailed(IOException e);
+    }
+
+    public void setOnSocketInitListener(OnSocketInitListener listener) {
+        this.listener = listener;
+    }
+
     public SocketClient(int byteLegth, int port){
         try {
             clientSocket = new DatagramSocket(port);
@@ -60,9 +92,9 @@ public class SocketClient {
             public void run() {
                 try {
                     socket = new Socket(Config.SERVER_HOST, Config.SERVER_PORT);
-                    initTCPReiver();
+                    handler.sendEmptyMessage(0);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    listener.initFailed(e);
                 }
             }
         }).start();
@@ -71,11 +103,6 @@ public class SocketClient {
         udpMessageSend = new UDPMessageSend(clientSocket);
 
         initUDPReciver();
-        initParser();
-
-        dispatcher = new MessageDispatcher(headParser);
-        dispatcher.start();
-        heartbeatDispatcher = new HeartbeatDispatcher();
 
         queue = MessageQueue.getInstance();
     }
@@ -91,15 +118,15 @@ public class SocketClient {
     }
 
     public Flowable<String> getConnectFlowable() {
-        return connectFlowable;
+        return connectFlowable.observeOn(AndroidSchedulers.mainThread());
     }
 
     public Flowable<String> getSendFlowable() {
-        return sendFlowable;
+        return sendFlowable.observeOn(AndroidSchedulers.mainThread());
     }
 
     public Flowable<String> getServerConnectFlowable() {
-        return serverConnectFlowable;
+        return serverConnectFlowable.observeOn(AndroidSchedulers.mainThread());
     }
 
     /**
@@ -108,7 +135,7 @@ public class SocketClient {
     public void close() {
         clientSocket.close();
         udpMessageReceiver.finish();
-        tcpMessageReceiver.finish();
+        //tcpMessageReceiver.finish();
         dispatcher.finish();
         heartbeatDispatcher.stop();
         try {
@@ -129,15 +156,18 @@ public class SocketClient {
         udpMessageReceiver.start();
     }
 
-    private void initTCPReiver() {
-        tcpMessageReceiver = new TCPMessageReceiver(socket);
-        tcpMessageReceiver.setOnReceiverFailedListener(new IMessageReceiver.OnReceiverListener() {
-            @Override
-            public void onFailed() {
-                initTCPReiver();
-            }
-        });
-        tcpMessageReceiver.start();
+    private void initTCPReiver(){
+        try {
+            tcpMessageReceiver = new TCPMessageReceiver(socket.getInputStream());
+            tcpMessageReceiver.setOnReceiverFailedListener(new IMessageReceiver.OnReceiverListener() {
+                @Override
+                public void onFailed() {
+                    initTCPReiver();
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     //构建初始化责任链
@@ -145,7 +175,7 @@ public class SocketClient {
         headParser = new ConnectMan(udpMessageSend, heartbeatDispatcher);
         AbstractParseMan heartbeatMan = new HeartbeatMan(udpMessageSend);
         AbstractParseMan sendMan = new SendMan(udpMessageSend);
-        AbstractParseMan serverConnectMan = new ServerConnectMan(tcpMessageSend);
+        AbstractParseMan serverConnectMan = new ServerConnectMan(tcpMessageSend, tcpMessageReceiver);
 
         headParser.nextParseMan = heartbeatMan;
         heartbeatMan.nextParseMan = sendMan;

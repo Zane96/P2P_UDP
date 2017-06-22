@@ -3,6 +3,7 @@ package com.zane.p2pclient.comman.receive;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.google.gson.stream.JsonWriter;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.Message;
 import com.zane.p2pclient.comman.MessageQueue;
@@ -25,9 +26,9 @@ import io.reactivex.subjects.AsyncSubject;
  * Blog: zane96.github.io
  */
 
-public class TCPMessageReceiver extends Thread implements IMessageReceiver{
+public class TCPMessageReceiver implements IMessageReceiver{
 
-    private Socket socket;
+    private InputStream is;
     private Gson gson;
     private OnReceiverListener listener;
 
@@ -35,34 +36,45 @@ public class TCPMessageReceiver extends Thread implements IMessageReceiver{
         this.listener = listener;
     }
 
-    public TCPMessageReceiver(Socket socket) {
-        this.socket = socket;
+    public TCPMessageReceiver(InputStream is) {
+        this.is = is;
         gson = new Gson();
     }
 
-    public void finish() {
-        interrupt();
-    }
+//    public void finish() {
+//        interrupt();
+//    }
 
-    @Override
-    public void run() {
-        super.run();
-        while (!isInterrupted()) {
-            try {
-                InputStream is = socket.getInputStream();
-                BufferedReader br = new BufferedReader(new InputStreamReader(is));
-                String line = "";
-                StringBuilder sb = new StringBuilder();
-                while ((line = br.readLine()) != null) {
-                    sb.append(line);
-                }
-                MessageQueue.getInstance().put(gson.fromJson(sb.toString(), Message.class));
-            } catch (IOException e) {
-                finish();
-                if (listener != null) {
-                    listener.onFailed();
-                }
+    public void read() {
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new InputStreamReader(is));
+            String line = null;
+            line = br.readLine();
+            Log.i("server", line + " 3");
+
+            Log.i("server", "4");
+            if (line != null) {
+                Message message = gson.fromJson(line, Message.class);
+                message.setType("receive");
+                MessageQueue.getInstance().put(message);
+            }
+            Log.i("server", "5");
+        } catch (IOException e) {
+            Log.i("server", "failed " + e.getMessage());
+            //finish();
+            if (listener != null) {
+                listener.onFailed();
             }
         }
+
     }
+
+//    @Override
+//    public void run() {
+//        super.run();
+//        while (!isInterrupted()) {
+//
+//        }
+//    }
 }
