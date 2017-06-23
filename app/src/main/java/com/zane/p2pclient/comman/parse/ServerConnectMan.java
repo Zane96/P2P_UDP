@@ -23,18 +23,6 @@ import io.reactivex.subjects.PublishSubject;
  * 负责建立连接的逻辑
  * udp的通道需要两个P都互发connect消息之后才能建立起来，不然发送的消息会被抛弃
  *
- * 策略：
- * 1. P1 2 S, P2 2 S Login TCP
- * 2. S 2 P1 Login反馈，S 2 P2 Login反馈 TCP
- * 3. p1 2 S connectP2请求信息 TCP
- * 3. S 2 P1, S 2 P2 传送数据 TCP
- * 4. P1 2 P2, P2 2 P1 传送请求连接建立的数据 UDP
- * 5. P1, P2分别等待P2P请求连接信息，等待1s，如果没等到转到4（暴力），尝试5次，如果还失败，主动断开连接
- * 6. 打通UDP通道，开始相互心跳包，相互发送数据 UDP
- * 7. 发送disconnect消息，断开连接 UDP，发送之后主动断开连接 UDP
- * 8. 发送退出登陆消息给服务器 TCP
- * 9. 服务器返回退出消息 TCP
- *
  * Created by Zane on 2017/6/19.
  * Email: zanebot96@gmail.com
  * Blog: zane96.github.io
@@ -93,14 +81,24 @@ public class ServerConnectMan extends AbstractParseMan{
         if (Config.MESSAGE_TYPE_LOGIN_RESULT.equals(messageType) || Config.MESSAGE_TYPE_QUIT_RESULT.equals(messageType)) {
             subject.onNext(message);
         } else if (Config.MESSAGE_TYPE_CONNECT_RESULE.equals(messageType)) {
-            //先统一存储对方的内网二元组
+            //判断发送来的对端和自己是不是在一个NAT下
+            String extraNet = message.getExtraNet();
             String intraNet = message.getIntraNet();
+            String content = message.getContent();
+            String host = "";
+            int port = -1;
 
-            String host = Utils.getHost(intraNet);
-            int port = Utils.getPort(intraNet);
+            if (content.equals(Utils.getHost(extraNet))) {
+                //一个NAT下，用内网通信
+                host = Utils.getHost(intraNet);
+                port = Utils.getPort(intraNet);
+            } else {
+                host = Utils.getHost(extraNet);
+                port = Utils.getPort(extraNet);
+            }
+
             MyPreferences.getInstance().putHost(host);
             MyPreferences.getInstance().putPort(port);
-
             //发送端对端连接请求
             Message messageSend = new Message.Builder()
                                           .setMessageType(Config.MESSAGE_TYPE_CONNECT_P)
