@@ -51,14 +51,12 @@ public class UDPMessageReciver extends Thread implements IMessageReceiver{
         while (!isInterrupted()) {
             try {
                 DatagramPacket packet = new DatagramPacket(new byte[byteLength], byteLength);
-                Log.i("server", "start listen udp package");
-                //socket.setSoTimeout(1000);
                 socket.receive(packet);
                 byte[] responseData = packet.getData();
 
-                Message message = gson.fromJson(new String(responseData), Message.class);
+                String rawData = new String(responseData);
+                Message message = gson.fromJson(rawData.substring(0, rawData.lastIndexOf("}") + 1), Message.class);
                 message.setType("receive");
-                Log.i("server", "receive udp: " + message.toString());
                 MessageQueue.getInstance().put(message);
             } catch (IOException e) {
                 finish();

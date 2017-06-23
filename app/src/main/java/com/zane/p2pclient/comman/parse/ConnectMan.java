@@ -2,6 +2,7 @@ package com.zane.p2pclient.comman.parse;
 
 import android.util.Log;
 
+import com.zane.p2pclient.MyPreferences;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.HeartbeatDispatcher;
 import com.zane.p2pclient.comman.Message;
@@ -53,8 +54,11 @@ public class ConnectMan extends AbstractParseMan{
         if (Config.MESSAGE_TYPE_CONNECT_P.equals(messageType)) {
             sendMan.sendMessage(message);
             heartbeatDispatcher.start();
-        } else if (Config.MESSAGE_TYPE_DISCONNECT.equals(messageType) || Config.MESSAGE_TYPE_SERVER_UDP.equals(messageType)) {
-            Log.i("server", "connect " + message.toString());
+        } else if (Config.MESSAGE_TYPE_DISCONNECT.equals(messageType)) {
+            sendMan.sendMessage(message);
+            MyPreferences.getInstance().putisConnected(false);
+            heartbeatDispatcher.stop();
+        } else if (Config.MESSAGE_TYPE_SERVER_UDP.equals(messageType)) {
             sendMan.sendMessage(message);
         } else {
             nextParseMan.send(message);
@@ -65,8 +69,10 @@ public class ConnectMan extends AbstractParseMan{
     public void receive(Message message) throws NoMatchParserMan{
         String messageType = message.getMessageType();
         if (Config.MESSAGE_TYPE_CONNECT_P.equals(messageType)) {
+            MyPreferences.getInstance().putisConnected(true);
             subject.onNext(message);
         } else if (Config.MESSAGE_TYPE_DISCONNECT.equals(messageType)) {
+            MyPreferences.getInstance().putisConnected(false);
             heartbeatDispatcher.stop();
             subject.onNext(message);
         } else {

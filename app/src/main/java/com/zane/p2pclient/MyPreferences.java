@@ -44,4 +44,13 @@ public class MyPreferences {
     public int getPort() {
         return sp.getInt("port", 0);
     }
+
+    public void putisConnected(boolean isConnected) {
+        editor.putBoolean("isConnected", isConnected);
+        editor.commit();
+    }
+
+    public boolean getisConnected() {
+        return sp.getBoolean("isConnected", false);
+    }
 }

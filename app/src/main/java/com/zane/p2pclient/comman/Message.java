@@ -100,7 +100,7 @@ public class Message {
                        " extraNet: " + extraNet +
                        " intraNet: " + intraNet +
                        " host: " + host +
-                       " post : " + port +
+                       " port : " + port +
                        " messageType: " + messageType +
                        " content: " + content;
     }

@@ -37,7 +37,6 @@ public class MainActivity extends AppCompatActivity {
     private SocketClient socketClient;
     private TextView textInfo;
     private StringBuilder sb;
-    private String intraNet;
 
     private Button btnLogin;
     private Button btnQuit;
@@ -45,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     private Button btnDisConnect;
     private Button btnSend;
     private EditText editMessage;
+    private EditText editUsername;
+    private EditText editPoint;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,14 +54,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         textInfo = (TextView) findViewById(R.id.text_message);
+        editMessage = (EditText) findViewById(R.id.edit_message);
+        editUsername = (EditText) findViewById(R.id.edit_username);
+        editPoint = (EditText) findViewById(R.id.edit_pointname);
+
         sb = new StringBuilder();
-        flushInfo("Init~");
+        flushInfo("初始化！~");
 
-        init();
-
-        if (socketClient != null && intraNet != null) {
-            initLogic(intraNet);
-        }
+        initLogic(Utils.getIntrxNet());
     }
 
     private void connect() {
@@ -72,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void disconnect() {
+
         btnSend.setEnabled(false);
         btnQuit.setEnabled(true);
         btnDisConnect.setEnabled(false);
@@ -97,12 +99,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void init() {
-        try {
-            intraNet = Utils.getIntrxNet();
-        } catch (IOException e) {
-            flushInfo("GetIntraNet error1: " + e.getMessage());
-        }
-
         socketClient = new SocketClient(1024, Config.PHONE_PORT);
         socketClient.setOnSocketInitListener(new SocketClient.OnSocketInitListener() {
             @Override
@@ -123,12 +119,13 @@ public class MainActivity extends AppCompatActivity {
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                init();
                 Message message = new Message.Builder()
                                           .setMessageType(Config.MESSAGE_TYPE_LOGIN)
                                           .setIntraNet(finalIntraNet)
                                           .setHost(Config.SERVER_HOST)
                                           .setPort(Config.SERVER_PORT)
-                                          .setContent("Zane")
+                                          .setContent(editUsername.getText().toString())
                                           .build();
                 try {
                     socketClient.send(message);
@@ -147,7 +144,8 @@ public class MainActivity extends AppCompatActivity {
                                           .setMessageType(Config.MESSAGE_TYPE_QUIT)
                                           .setHost(Config.SERVER_HOST)
                                           .setPort(Config.SERVER_PORT)
-                                          .setContent("Zane")
+                                          .setIntraNet(Utils.getIntrxNet())
+                                          .setContent(editUsername.getText().toString())
                                           .build();
                 try {
                     socketClient.send(message);
@@ -166,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
                                           .setMessageType(Config.MESSAGE_TYPE_CONNECT)
                                           .setHost(Config.SERVER_HOST)
                                           .setPort(Config.SERVER_PORT)
-                                          .setContent("SB")
+                                          .setContent(editUsername.getText().toString() + ":" + editPoint.getText().toString())
                                           .build();
                 try {
                     socketClient.send(message);
@@ -181,12 +179,14 @@ public class MainActivity extends AppCompatActivity {
         btnDisConnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                disconnect();
                 Message message = new Message.Builder()
                                           .setMessageType(Config.MESSAGE_TYPE_DISCONNECT)
                                           .setHost(MyPreferences.getInstance().getHost())
                                           .setPort(MyPreferences.getInstance().getPort())
                                           .setContent("disconnect")
                                           .build();
+
                 try {
                     socketClient.send(message);
                 } catch (Exception e) {
@@ -240,6 +240,8 @@ public class MainActivity extends AppCompatActivity {
                     flushInfo("退出成功");
                 } else if (s.equals(Config.MESSAGE_TYPE_CONNECT_RESULE)) {
                     flushInfo("获取对端信息成功");
+                } else if (s.equals(Config.MESSAGE_TYPE_NOTFOUND)) {
+                    flushInfo("对方未登陆");
                 }
             }
 
@@ -265,7 +267,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNext(String s) {
-                flushInfo("收到消息: " + s);
+                flushInfo(s);
             }
 
             @Override

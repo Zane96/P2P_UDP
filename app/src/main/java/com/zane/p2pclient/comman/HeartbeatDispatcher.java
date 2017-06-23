@@ -30,6 +30,7 @@ public class HeartbeatDispatcher {
                                         .setPort(MyPreferences.getInstance().getPort())
                                         .setContent(String.valueOf(System.currentTimeMillis()))
                                         .build();
+        this.heartbeatMessage.setType("send");
     }
 
     public void start() {
@@ -42,8 +43,10 @@ public class HeartbeatDispatcher {
     }
 
     public void stop() {
-        if (!disposable.isDisposed()) {
-            disposable.dispose();
+        if (disposable != null) {
+            if (!disposable.isDisposed()) {
+                disposable.dispose();
+            }
         }
     }
 }

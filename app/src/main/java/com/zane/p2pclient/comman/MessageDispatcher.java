@@ -41,6 +41,7 @@ public class MessageDispatcher extends Thread{
                     if ("send".equals(message.getType())) {
                         headParser.send(message);
                     } else if ("receive".equals(message.getType())) {
+                        Log.i("server", "receive parse");
                         headParser.receive(message);
                     } else {
                         Log.i("MessageDispatcher", "Message without type! " + message.toString());

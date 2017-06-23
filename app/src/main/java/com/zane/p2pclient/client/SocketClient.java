@@ -1,7 +1,6 @@
 package com.zane.p2pclient.client;
 
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import com.zane.p2pclient.comman.Config;
@@ -27,7 +26,6 @@ import java.net.SocketException;
 
 import io.reactivex.Flowable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.subjects.BehaviorSubject;
 
 /**
  * Created by Zane on 2017/6/17.
@@ -67,6 +65,8 @@ public class SocketClient {
                     listener.initSuccess();
 
                     break;
+                case 1:
+                    listener.initFailed((IOException) msg.obj);
             }
         }
     };
@@ -94,7 +94,10 @@ public class SocketClient {
                     socket = new Socket(Config.SERVER_HOST, Config.SERVER_PORT);
                     handler.sendEmptyMessage(0);
                 } catch (IOException e) {
-                    listener.initFailed(e);
+                    android.os.Message message = android.os.Message.obtain();
+                    message.what = 1;
+                    message.obj = e;
+                    handler.sendMessage(message);
                 }
             }
         }).start();
@@ -135,7 +138,6 @@ public class SocketClient {
     public void close() {
         clientSocket.close();
         udpMessageReceiver.finish();
-        //tcpMessageReceiver.finish();
         dispatcher.finish();
         heartbeatDispatcher.stop();
         try {

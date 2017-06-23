@@ -30,7 +30,6 @@ public class TCPMessageSend implements IMessageSend{
     public void sendMessage(Message message) throws IOException{
         PrintWriter pw = new PrintWriter(socket.getOutputStream());
         pw.print(gson.toJson(message));
-        Log.i("server", gson.toJson(message));
         pw.flush();
     }
 }

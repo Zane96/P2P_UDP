@@ -2,6 +2,7 @@ package com.zane.p2pclient.comman.parse;
 
 import android.util.Log;
 
+import com.zane.p2pclient.MyPreferences;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.Message;
 import com.zane.p2pclient.comman.send.UDPMessageSend;
@@ -25,18 +26,12 @@ import io.reactivex.subjects.PublishSubject;
 public class SendMan extends AbstractParseMan{
 
     private Flowable<String> flowable;
-    private PublishSubject<Message> subject;
+    private PublishSubject<String> subject;
 
     public SendMan(UDPMessageSend sendMan) {
         this.sendMan = sendMan;
         subject = PublishSubject.create();
-        flowable = subject.toFlowable(BackpressureStrategy.LATEST).map(new Function<Message, String>() {
-            @Override
-            public String apply(@NonNull Message message) throws Exception {
-                Log.i("receive", "Receive message: " + message.toString());
-                return message.getContent();
-            }
-        });
+        flowable = subject.toFlowable(BackpressureStrategy.LATEST);
     }
 
     public Flowable<String> getFlowable() {
@@ -47,7 +42,12 @@ public class SendMan extends AbstractParseMan{
     public void send(Message message) throws IOException {
         String messageType = message.getMessageType();
         if (Config.MESSAGE_TYPE_SEND.equals(messageType)) {
-            sendMan.sendMessage(message);
+            if (MyPreferences.getInstance().getisConnected()) {
+                sendMan.sendMessage(message);
+                subject.onNext("发送消息: " + message.getContent());
+            } else {
+                subject.onNext("未连接～～");
+            }
         } else {
             nextParseMan.send(message);
         }
@@ -57,7 +57,7 @@ public class SendMan extends AbstractParseMan{
     public void receive(Message message) throws NoMatchParserMan{
         String messageType = message.getMessageType();
         if (Config.MESSAGE_TYPE_SEND.equals(messageType)) {
-            subject.onNext(message);
+            subject.onNext("接收消息： " + message.getContent());
         } else {
             nextParseMan.receive(message);
         }

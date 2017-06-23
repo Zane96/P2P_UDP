@@ -54,7 +54,6 @@ public class ServerConnectMan extends AbstractParseMan{
         flowable = subject.toFlowable(BackpressureStrategy.LATEST).map(new Function<Message, String>() {
             @Override
             public String apply(@NonNull Message message) throws Exception {
-                Log.i("receive", "Receive message: " + message.toString());
                 return message.getMessageType();
             }
         });
@@ -76,6 +75,7 @@ public class ServerConnectMan extends AbstractParseMan{
                                          .setMessageType(Config.MESSAGE_TYPE_SERVER_UDP)
                                          .setHost(Config.SERVER_HOST)
                                          .setPort(Config.SERVER_PORT)
+                                         .setContent(Utils.getIntrxNet())
                                          .build();
             messageUdp.setType("send");
             MessageQueue.getInstance().put(messageUdp);
@@ -95,6 +95,7 @@ public class ServerConnectMan extends AbstractParseMan{
         } else if (Config.MESSAGE_TYPE_CONNECT_RESULE.equals(messageType)) {
             //先统一存储对方的内网二元组
             String intraNet = message.getIntraNet();
+
             String host = Utils.getHost(intraNet);
             int port = Utils.getPort(intraNet);
             MyPreferences.getInstance().putHost(host);
@@ -107,8 +108,10 @@ public class ServerConnectMan extends AbstractParseMan{
                                           .setPort(port)
                                           .build();
             messageSend.setType("send");
-            MessageQueue.getInstance().put(message);
+            MessageQueue.getInstance().put(messageSend);
 
+            subject.onNext(message);
+        } else if (Config.MESSAGE_TYPE_NOTFOUND.equals(messageType)) {
             subject.onNext(message);
         } else {
             throw new NoMatchParserMan("No Match ParseMan!!!~");

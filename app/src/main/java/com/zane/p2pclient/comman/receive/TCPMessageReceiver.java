@@ -51,15 +51,13 @@ public class TCPMessageReceiver implements IMessageReceiver{
             br = new BufferedReader(new InputStreamReader(is));
             String line = null;
             line = br.readLine();
-            Log.i("server", line + " 3");
 
-            Log.i("server", "4");
             if (line != null) {
                 Message message = gson.fromJson(line, Message.class);
                 message.setType("receive");
                 MessageQueue.getInstance().put(message);
             }
-            Log.i("server", "5");
+
         } catch (IOException e) {
             Log.i("server", "failed " + e.getMessage());
             //finish();
