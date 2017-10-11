@@ -1,7 +1,5 @@
 package com.zane.p2pclient.comman.parse;
 
-import android.util.Log;
-
 import com.zane.p2pclient.MyPreferences;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.Message;
@@ -11,9 +9,6 @@ import java.io.IOException;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
-import io.reactivex.annotations.NonNull;
-import io.reactivex.functions.Function;
-import io.reactivex.subjects.AsyncSubject;
 import io.reactivex.subjects.PublishSubject;
 
 /**
@@ -23,7 +18,7 @@ import io.reactivex.subjects.PublishSubject;
  * Blog: zane96.github.io
  */
 
-public class SendMan extends AbstractParseMan{
+public class SendMan extends AbstractParseMan {
 
     private Flowable<String> flowable;
     private PublishSubject<String> subject;
@@ -54,7 +49,7 @@ public class SendMan extends AbstractParseMan{
     }
 
     @Override
-    public void receive(Message message) throws NoMatchParserMan{
+    public void receive(Message message) throws NoMatchParserMan {
         String messageType = message.getMessageType();
         if (Config.MESSAGE_TYPE_SEND.equals(messageType)) {
             subject.onNext("接收消息： " + message.getContent());
