@@ -128,6 +128,10 @@ public class SocketClient {
         return connectFlowable.observeOn(AndroidSchedulers.mainThread());
     }
 
+    public Flowable<String> getUdpChannelFlowable() {
+        return udpChannelFlowable.observeOn(AndroidSchedulers.mainThread());
+    }
+
     public Flowable<String> getSendFlowable() {
         return sendFlowable.observeOn(AndroidSchedulers.mainThread());
     }
@@ -176,7 +180,7 @@ public class SocketClient {
     //构建初始化责任链
     private void initParser() {
         headParser = new ConnectMan(udpMessageSend, heartbeatDispatcher);
-        AbstractParseMan udpChannelMan = new UDPChannelMan(udpMessageSend,udpMessageReceiver,heartbeatDispatcher);
+        AbstractParseMan udpChannelMan = new UDPChannelMan(udpMessageSend, udpMessageReceiver, heartbeatDispatcher);
         AbstractParseMan heartbeatMan = new HeartbeatMan(udpMessageSend);
         AbstractParseMan sendMan = new SendMan(udpMessageSend);
         AbstractParseMan serverConnectMan = new ServerConnectMan(tcpMessageSend, tcpMessageReceiver);

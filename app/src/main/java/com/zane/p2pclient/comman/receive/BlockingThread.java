@@ -1,11 +1,20 @@
 package com.zane.p2pclient.comman.receive;
 
+import android.app.admin.DeviceAdminInfo;
+
 import com.google.gson.Gson;
+import com.zane.p2pclient.MyPreferences;
+import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.Message;
 import com.zane.p2pclient.comman.MessageFilter;
 
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -60,17 +69,31 @@ public class BlockingThread extends Thread {
     }
 
     public void close() {
-        interrupt();
+        if (!Thread.currentThread().isInterrupted())   // TODO: 2017/10/12   判断条件
+            interrupt();
     }
 
     protected void generateMessage(byte[] responseData) {
         String rawData = new String(responseData);
+        String host = Config.isP2PConnect ? MyPreferences.getInstance().getHost() : Config.SERVER_HOST;
+        int port = Config.isP2PConnect ? MyPreferences.getInstance().getPort() : Config.SERVER_PORT;
+
         Message message = gson.fromJson(rawData.substring(0, rawData.lastIndexOf("}") + 1), Message.class);
+//        Message message = gson.fromJson(line, Message.class);
+        message.setHost(host);
+        message.setPort(port);
+
         filterMessage(message);
     }
 
     protected void generateMessage(String messageType) {
+        String host = Config.isP2PConnect ? MyPreferences.getInstance().getHost() : Config.SERVER_HOST;
+        int port = Config.isP2PConnect ? MyPreferences.getInstance().getPort() : Config.SERVER_PORT;
+
         Message message = new Message.Builder().setMessageType(messageType).build();
+        message.setHost(host);
+        message.setPort(port);
+
         filterMessage(message);
     }
 

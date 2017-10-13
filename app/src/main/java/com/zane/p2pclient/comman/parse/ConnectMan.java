@@ -69,16 +69,6 @@ public class ConnectMan extends AbstractParseMan {
             MyPreferences.getInstance().putisConnected(false);
             heartbeatDispatcher.stop();
             subject.onNext(message);
-        } else if (Config.MESSAGE_TYPE_P2P_CONNECT_FAILED.equals(messageType)) { //多次重传P2P连接请求报文失败，向服务器发起P2P连接请求
-            // TODO: 2017/10/7 两端同时再次向服务器发起连接？
-            Message connectMessage = new Message.Builder()
-                    .setMessageType(Config.MESSAGE_TYPE_CONNECT)
-                    .setHost(Config.SERVER_HOST)
-                    .setPort(Config.SERVER_PORT)
-                    .setContent(Config.connectContent)
-                    .build();
-
-            MessageFilter.putMessageIntoQueue(true,connectMessage);
         } else if (Config.MESSAGE_TYPE_LOGIN_RESULT.equals(messageType)) {
             subject.onNext(message);
         } else {

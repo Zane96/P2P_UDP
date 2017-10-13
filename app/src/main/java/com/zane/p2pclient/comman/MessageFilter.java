@@ -17,8 +17,6 @@ public class MessageFilter {
         if (Config.MESSAGE_TYPE_LOGIN.equals(messageType) || Config.MESSAGE_TYPE_CONNECT_P.equals(messageType)) {
             message.setMessageType(Config.MESSAGE_TYPE_REQUEST_CONNECTION);
             putMessageIntoQueue(true, message);
-        } else if (Config.MESSAGE_TYPE_CONNECT.equals(messageType)) {
-            Config.connectContent = message.getContent();
         }
     }
 
@@ -39,16 +37,16 @@ public class MessageFilter {
             UDPMessageReceiver.reTransTime = Config.reTransTimeOut;
             UDPMessageReceiver.reTriesTime = Config.retriesTime;
 
+            Config.isP2PConnect = true;
+
             parseP2PMessage(message);
         }
     }
 
     private static void parseP2PMessage(Message message) {
-        Config.isP2PConnect = true;
-
-        String extraNet = message.getExtraNet();
-        String intraNet = message.getIntraNet();
-        String content = message.getContent();
+        String extraNet = message.getExtraNet(); //外网信息二元组
+        String intraNet = message.getIntraNet(); //内网信息二元组
+        String content = message.getContent();   //请求主机外网IP
         String host = "";
         int port = -1;
 
@@ -64,7 +62,7 @@ public class MessageFilter {
         MyPreferences.getInstance().putPort(port);
 
         Message messageSend = new Message.Builder()
-                .setMessageType(Config.MESSAGE_TYPE_CONNECT_P)
+                .setMessageType(Config.MESSAGE_TYPE_REQUEST_CONNECTION)
                 .setHost(host)
                 .setPort(port)
                 .isReliableChannel(true)

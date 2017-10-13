@@ -91,7 +91,7 @@ public class UDPMessageReceiver extends BlockingThread implements IMessageReceiv
                     if (!channelEstablished) {
                         channelEstablished = true;
                         if (!Config.isReliableTrans) {
-                            generateMessage(Config.MESSAGE_TYPE_CHANNEL_ESTABLISHED); //UDP通道建立成功
+                            generateMessage(Config.MESSAGE_TYPE_CHANNEL_ESTABLISHED); //P2P通道建立成功
                         }
                     } else {
                         generateMessage(Config.MESSAGE_TYPE_CONNECT_FAILED);  //UDP通道建立成功,消息传输失败（多次重传仍收不到来自对方的确认应答）

@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 init();
-                Message message= new Message.Builder()
+                Message message = new Message.Builder()
                         .setMessageType(Config.MESSAGE_TYPE_LOGIN)
                         .setIntraNet(finalIntraNet)
                         .setHost(Config.SERVER_HOST)
@@ -149,11 +149,15 @@ public class MainActivity extends AppCompatActivity {
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
+                        String hostNames = editUsername.getText().toString() + ":" + editPoint.getText().toString();
+                        MyPreferences.getInstance().putHostNames(hostNames);
+
+
                         Message message = new Message.Builder()
                                 .setMessageType(Config.MESSAGE_TYPE_CONNECT)
                                 .setHost(Config.SERVER_HOST)
                                 .setPort(Config.SERVER_PORT)
-                                .setContent(editUsername.getText().toString() + ":" + editPoint.getText().toString())
+                                .setContent(hostNames)
                                 .build();
                         try {
                             socketClient.send(message);
@@ -222,10 +226,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNext(String s) {
-                if (s.equals(Config.MESSAGE_TYPE_LOGIN_RESULT)) {
-                    login();
-                    flushInfo("登陆成功");
-                } else if (s.equals(Config.MESSAGE_TYPE_QUIT_RESULT)) {
+                if (s.equals(Config.MESSAGE_TYPE_QUIT_RESULT)) {
                     quit();
                     flushInfo("退出成功");
 //                } else if (s.equals(Config.MESSAGE_TYPE_CONNECT_RESULT)) {
@@ -284,20 +285,51 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNext(String s) {
-//                if (s.equals(Config.MESSAGE_TYPE_CONNECT_P_REUSLT)) {
-//                    flushInfo("通道建立成功");
-////                    connect();
-//                } else if (s.equals(Config.MESSAGE_TYPE_DISCONNECT)) {
-//                    flushInfo("通道断裂");
-//                    disconnect();
-//                } else if (s.equals(Config.MESSAGE_TYPE_SERVER_UDP_RESULT)) {
-//                    flushInfo("打通与服务器之间的可靠通道");
-//                }
+                if (s.equals(Config.MESSAGE_TYPE_DISCONNECT)) {
+                    flushInfo("通道断裂");
+                    disconnect();
+                }
             }
 
             @Override
             public void onError(Throwable t) {
                 flushInfo("ConnectFlowable error: " + t.getMessage());
+                subscription.cancel();
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+        socketClient.getUdpChannelFlowable().subscribe(new Subscriber<String>() {
+            Subscription subscription;
+
+            @Override
+            public void onSubscribe(Subscription s) {
+                subscription = s;
+                s.request(Integer.MAX_VALUE);
+            }
+
+            @Override
+            public void onNext(String s) {
+                if (Config.MESSAGE_TYPE_CHANNEL_ESTABLISHED.equals(s)) {
+                    flushInfo("P2P通道建立成功");
+                } else if (Config.MESSAGE_TYPE_ACK.equals(s)) {
+                    flushInfo("打通与服务器之间的可靠UDP通道，并成功传输信息");
+                } else if (Config.MESSAGE_TYPE_CONNECT_FAILED.equals(s)) {
+                    flushInfo("UDP通道建立失败");
+                } else if (Config.MESSAGE_TYPE_MESSAGE_SEND_FAILED.equals(s)) {
+                    flushInfo("消息传输失败");
+                } else if (Config.MESSAGE_TYPE_P2P_CONNECT_FAILED.equals(s)) {
+                    flushInfo("P2P通道建立失败");
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                flushInfo("UdpChannelFlowable error: " + t.getMessage());
                 subscription.cancel();
             }
 

@@ -3,6 +3,7 @@ package com.zane.p2pclient;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.widget.EditText;
 
 /**
  * Created by Zane on 2017/6/18.
@@ -14,12 +15,12 @@ public class MyPreferences {
     private static SharedPreferences sp;
     private static SharedPreferences.Editor editor;
 
-    private MyPreferences(){
+    private MyPreferences() {
         sp = PreferenceManager.getDefaultSharedPreferences(App.getInstance());
         editor = sp.edit();
     }
 
-    private static class SingletonHolder{
+    private static class SingletonHolder {
         private static final MyPreferences mp = new MyPreferences();
     }
 
@@ -52,5 +53,14 @@ public class MyPreferences {
 
     public boolean getisConnected() {
         return sp.getBoolean("isConnected", false);
+    }
+
+    public void putHostNames(String hostNames) {
+        editor.putString("hostNames", hostNames);
+        editor.commit();
+    }
+
+    public String getHostNames() {
+        return sp.getString("hostNames", "");
     }
 }
