@@ -1,16 +1,12 @@
 package com.zane.p2pclient;
 
-import android.os.Handler;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.google.gson.Gson;
 import com.zane.p2pclient.client.SocketClient;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.Message;
@@ -19,18 +15,6 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.Socket;
-import java.util.concurrent.TimeUnit;
-
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.FlowableEmitter;
-import io.reactivex.FlowableOnSubscribe;
-import io.reactivex.annotations.NonNull;
-import io.reactivex.functions.Consumer;
-import io.reactivex.subjects.AsyncSubject;
-import io.reactivex.subjects.PublishSubject;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -52,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+
+        SoftHideKeyBoardUtil.assistActivity(this);
 
         textInfo = (TextView) findViewById(R.id.text_message);
         editMessage = (EditText) findViewById(R.id.edit_message);
@@ -121,12 +107,14 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 init();
                 Message message = new Message.Builder()
-                                          .setMessageType(Config.MESSAGE_TYPE_LOGIN)
-                                          .setIntraNet(finalIntraNet)
-                                          .setHost(Config.SERVER_HOST)
-                                          .setPort(Config.SERVER_PORT)
-                                          .setContent(editUsername.getText().toString())
-                                          .build();
+                        .setMessageType(Config.MESSAGE_TYPE_LOGIN)
+                        .setIntraNet(finalIntraNet)
+                        .setHost(Config.SERVER_HOST)
+                        .setPort(Config.SERVER_PORT)
+                        .setContent(editUsername.getText().toString())
+                        .isReliableChannel(true)
+                        .isReliableTrans(true)
+                        .build();
                 try {
                     socketClient.send(message);
                 } catch (Exception e) {
@@ -141,12 +129,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Message message = new Message.Builder()
-                                          .setMessageType(Config.MESSAGE_TYPE_QUIT)
-                                          .setHost(Config.SERVER_HOST)
-                                          .setPort(Config.SERVER_PORT)
-                                          .setIntraNet(Utils.getIntrxNet())
-                                          .setContent(editUsername.getText().toString())
-                                          .build();
+                        .setMessageType(Config.MESSAGE_TYPE_QUIT)
+                        .setHost(Config.SERVER_HOST)
+                        .setPort(Config.SERVER_PORT)
+                        .setIntraNet(Utils.getIntrxNet())
+                        .setContent(editUsername.getText().toString())
+                        .build();
                 try {
                     socketClient.send(message);
                 } catch (Exception e) {
@@ -157,22 +145,27 @@ public class MainActivity extends AppCompatActivity {
 
         //连接
         btnConnect = (Button) findViewById(R.id.btn_connect);
-        btnConnect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Message message = new Message.Builder()
-                                          .setMessageType(Config.MESSAGE_TYPE_CONNECT)
-                                          .setHost(Config.SERVER_HOST)
-                                          .setPort(Config.SERVER_PORT)
-                                          .setContent(editUsername.getText().toString() + ":" + editPoint.getText().toString())
-                                          .build();
-                try {
-                    socketClient.send(message);
-                } catch (Exception e) {
-                    flushInfo("Send ConnectMessage error: " + e.getMessage());
-                }
-            }
-        });
+        btnConnect.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        String hostNames = editUsername.getText().toString() + ":" + editPoint.getText().toString();
+                        MyPreferences.getInstance().putHostNames(hostNames);
+
+
+                        Message message = new Message.Builder()
+                                .setMessageType(Config.MESSAGE_TYPE_CONNECT)
+                                .setHost(Config.SERVER_HOST)
+                                .setPort(Config.SERVER_PORT)
+                                .setContent(hostNames)
+                                .build();
+                        try {
+                            socketClient.send(message);
+                        } catch (Exception e) {
+                            flushInfo("Send ConnectMessage error: " + e.getMessage());
+                        }
+                    }
+                });
 
         //断开连接
         btnDisConnect = (Button) findViewById(R.id.btn_disconnect);
@@ -181,11 +174,11 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 disconnect();
                 Message message = new Message.Builder()
-                                          .setMessageType(Config.MESSAGE_TYPE_DISCONNECT)
-                                          .setHost(MyPreferences.getInstance().getHost())
-                                          .setPort(MyPreferences.getInstance().getPort())
-                                          .setContent("disconnect")
-                                          .build();
+                        .setMessageType(Config.MESSAGE_TYPE_DISCONNECT)
+                        .setHost(MyPreferences.getInstance().getHost())
+                        .setPort(MyPreferences.getInstance().getPort())
+                        .setContent("disconnect")
+                        .build();
 
                 try {
                     socketClient.send(message);
@@ -201,11 +194,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Message message = new Message.Builder()
-                                          .setMessageType(Config.MESSAGE_TYPE_SEND)
-                                          .setHost(MyPreferences.getInstance().getHost())
-                                          .setPort(MyPreferences.getInstance().getPort())
-                                          .setContent(editMessage.getText().toString())
-                                          .build();
+                        .setMessageType(Config.MESSAGE_TYPE_SEND)
+                        .setHost(MyPreferences.getInstance().getHost())
+                        .setPort(MyPreferences.getInstance().getPort())
+                        .setContent(editMessage.getText().toString())
+                        .build();
                 try {
                     socketClient.send(message);
                 } catch (Exception e) {
@@ -224,6 +217,7 @@ public class MainActivity extends AppCompatActivity {
     private void registListener() {
         socketClient.getServerConnectFlowable().subscribe(new Subscriber<String>() {
             Subscription subscription;
+
             @Override
             public void onSubscribe(Subscription s) {
                 subscription = s;
@@ -232,14 +226,11 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNext(String s) {
-                if (s.equals(Config.MESSAGE_TYPE_LOGIN_RESULT)) {
-                    login();
-                    flushInfo("登陆成功");
-                } else if (s.equals(Config.MESSAGE_TYPE_QUIT_RESULT)) {
+                if (s.equals(Config.MESSAGE_TYPE_QUIT_RESULT)) {
                     quit();
                     flushInfo("退出成功");
-                } else if (s.equals(Config.MESSAGE_TYPE_CONNECT_RESULE)) {
-                    flushInfo("获取对端信息成功");
+//                } else if (s.equals(Config.MESSAGE_TYPE_CONNECT_RESULT)) {
+//                    flushInfo("获取对端信息成功");
                 } else if (s.equals(Config.MESSAGE_TYPE_NOTFOUND)) {
                     flushInfo("对方未登陆");
                 }
@@ -259,6 +250,7 @@ public class MainActivity extends AppCompatActivity {
 
         socketClient.getSendFlowable().subscribe(new Subscriber<String>() {
             Subscription subscription;
+
             @Override
             public void onSubscribe(Subscription s) {
                 subscription = s;
@@ -284,6 +276,7 @@ public class MainActivity extends AppCompatActivity {
 
         socketClient.getConnectFlowable().subscribe(new Subscriber<String>() {
             Subscription subscription;
+
             @Override
             public void onSubscribe(Subscription s) {
                 subscription = s;
@@ -292,10 +285,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNext(String s) {
-                if (s.equals(Config.MESSAGE_TYPE_CONNECT_P)) {
-                    flushInfo("通道建立成功");
-                    connect();
-                } else if (s.equals(Config.MESSAGE_TYPE_DISCONNECT)) {
+                if (s.equals(Config.MESSAGE_TYPE_DISCONNECT)) {
                     flushInfo("通道断裂");
                     disconnect();
                 }
@@ -304,6 +294,42 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onError(Throwable t) {
                 flushInfo("ConnectFlowable error: " + t.getMessage());
+                subscription.cancel();
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+
+        socketClient.getUdpChannelFlowable().subscribe(new Subscriber<String>() {
+            Subscription subscription;
+
+            @Override
+            public void onSubscribe(Subscription s) {
+                subscription = s;
+                s.request(Integer.MAX_VALUE);
+            }
+
+            @Override
+            public void onNext(String s) {
+                if (Config.MESSAGE_TYPE_CHANNEL_ESTABLISHED.equals(s)) {
+                    flushInfo("P2P通道建立成功");
+                } else if (Config.MESSAGE_TYPE_ACK.equals(s)) {
+                    flushInfo("打通与服务器之间的可靠UDP通道，并成功传输信息");
+                } else if (Config.MESSAGE_TYPE_CONNECT_FAILED.equals(s)) {
+                    flushInfo("UDP通道建立失败");
+                } else if (Config.MESSAGE_TYPE_MESSAGE_SEND_FAILED.equals(s)) {
+                    flushInfo("消息传输失败");
+                } else if (Config.MESSAGE_TYPE_P2P_CONNECT_FAILED.equals(s)) {
+                    flushInfo("P2P通道建立失败");
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                flushInfo("UdpChannelFlowable error: " + t.getMessage());
                 subscription.cancel();
             }
 

@@ -7,15 +7,17 @@ import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.HeartbeatDispatcher;
 import com.zane.p2pclient.comman.Message;
 import com.zane.p2pclient.comman.MessageDispatcher;
+import com.zane.p2pclient.comman.MessageFilter;
 import com.zane.p2pclient.comman.MessageQueue;
 import com.zane.p2pclient.comman.parse.AbstractParseMan;
 import com.zane.p2pclient.comman.parse.ConnectMan;
 import com.zane.p2pclient.comman.parse.HeartbeatMan;
 import com.zane.p2pclient.comman.parse.SendMan;
 import com.zane.p2pclient.comman.parse.ServerConnectMan;
+import com.zane.p2pclient.comman.parse.UDPChannelMan;
 import com.zane.p2pclient.comman.receive.IMessageReceiver;
 import com.zane.p2pclient.comman.receive.TCPMessageReceiver;
-import com.zane.p2pclient.comman.receive.UDPMessageReciver;
+import com.zane.p2pclient.comman.receive.UDPMessageReceiver;
 import com.zane.p2pclient.comman.send.TCPMessageSend;
 import com.zane.p2pclient.comman.send.UDPMessageSend;
 
@@ -36,7 +38,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 public class SocketClient {
     private DatagramSocket clientSocket;
     private Socket socket;
-    private UDPMessageReciver udpMessageReceiver;
+    private UDPMessageReceiver udpMessageReceiver;
     private UDPMessageSend udpMessageSend;
     private TCPMessageSend tcpMessageSend;
     private TCPMessageReceiver tcpMessageReceiver;
@@ -47,11 +49,12 @@ public class SocketClient {
     private int byteLength;
 
     private Flowable<String> connectFlowable;
+    private Flowable<String> udpChannelFlowable;
     private Flowable<String> sendFlowable;
     private Flowable<String> serverConnectFlowable;
 
     private OnSocketInitListener listener;
-    private Handler handler = new Handler(){
+    private Handler handler = new Handler() {
         @Override
         public void handleMessage(android.os.Message msg) {
             switch (msg.what) {
@@ -71,8 +74,9 @@ public class SocketClient {
         }
     };
 
-    public interface OnSocketInitListener{
+    public interface OnSocketInitListener {
         void initSuccess();
+
         void initFailed(IOException e);
     }
 
@@ -80,7 +84,7 @@ public class SocketClient {
         this.listener = listener;
     }
 
-    public SocketClient(int byteLegth, int port){
+    public SocketClient(int byteLegth, int port) {
         try {
             clientSocket = new DatagramSocket(port);
         } catch (SocketException e) {
@@ -112,16 +116,20 @@ public class SocketClient {
 
     /**
      * 将要发送的Message添加到队列中，然后通过一个分发队列去分发Message
+     *
      * @param message
      * @throws Exception
      */
-    public void send(Message message) throws Exception{
-        message.setType("send");
-        queue.put(message);
+    public void send(Message message) throws Exception {
+        MessageFilter.filterSendMessage(message);
     }
 
     public Flowable<String> getConnectFlowable() {
         return connectFlowable.observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public Flowable<String> getUdpChannelFlowable() {
+        return udpChannelFlowable.observeOn(AndroidSchedulers.mainThread());
     }
 
     public Flowable<String> getSendFlowable() {
@@ -137,7 +145,8 @@ public class SocketClient {
      */
     public void close() {
         clientSocket.close();
-        udpMessageReceiver.finish();
+        udpMessageReceiver.close();
+        tcpMessageReceiver.close();
         dispatcher.finish();
         heartbeatDispatcher.stop();
         try {
@@ -148,42 +157,41 @@ public class SocketClient {
     }
 
     private void initUDPReciver() {
-        udpMessageReceiver = new UDPMessageReciver(clientSocket, byteLength);
+        udpMessageReceiver = new UDPMessageReceiver(clientSocket, byteLength);
         udpMessageReceiver.setOnReceiverFailedListener(new IMessageReceiver.OnReceiverListener() {
             @Override
             public void onFailed() {
                 initUDPReciver();
             }
         });
-        udpMessageReceiver.start();
     }
 
-    private void initTCPReiver(){
-        try {
-            tcpMessageReceiver = new TCPMessageReceiver(socket.getInputStream());
-            tcpMessageReceiver.setOnReceiverFailedListener(new IMessageReceiver.OnReceiverListener() {
-                @Override
-                public void onFailed() {
-                    initTCPReiver();
-                }
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void initTCPReiver() {
+        tcpMessageReceiver = new TCPMessageReceiver(socket);
+        tcpMessageReceiver.setOnReceiverFailedListener(new IMessageReceiver.OnReceiverListener() {
+            @Override
+            public void onFailed() {
+                initTCPReiver();
+            }
+        });
+        tcpMessageReceiver.start();
     }
 
     //构建初始化责任链
     private void initParser() {
         headParser = new ConnectMan(udpMessageSend, heartbeatDispatcher);
+        AbstractParseMan udpChannelMan = new UDPChannelMan(udpMessageSend, udpMessageReceiver, heartbeatDispatcher);
         AbstractParseMan heartbeatMan = new HeartbeatMan(udpMessageSend);
         AbstractParseMan sendMan = new SendMan(udpMessageSend);
         AbstractParseMan serverConnectMan = new ServerConnectMan(tcpMessageSend, tcpMessageReceiver);
 
-        headParser.nextParseMan = heartbeatMan;
+        headParser.nextParseMan = udpChannelMan;
+        udpChannelMan.nextParseMan = heartbeatMan;
         heartbeatMan.nextParseMan = sendMan;
         sendMan.nextParseMan = serverConnectMan;
 
         connectFlowable = headParser.getFlowable();
+        udpChannelFlowable = udpChannelMan.getFlowable();
         sendFlowable = sendMan.getFlowable();
         serverConnectFlowable = serverConnectMan.getFlowable();
     }

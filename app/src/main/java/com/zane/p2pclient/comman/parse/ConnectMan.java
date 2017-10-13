@@ -6,6 +6,7 @@ import com.zane.p2pclient.MyPreferences;
 import com.zane.p2pclient.comman.Config;
 import com.zane.p2pclient.comman.HeartbeatDispatcher;
 import com.zane.p2pclient.comman.Message;
+import com.zane.p2pclient.comman.MessageFilter;
 import com.zane.p2pclient.comman.send.UDPMessageSend;
 
 import java.io.IOException;
@@ -14,7 +15,6 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.functions.Function;
-import io.reactivex.subjects.AsyncSubject;
 import io.reactivex.subjects.PublishSubject;
 
 /**
@@ -24,7 +24,7 @@ import io.reactivex.subjects.PublishSubject;
  * Blog: zane96.github.io
  */
 
-public class ConnectMan extends AbstractParseMan{
+public class ConnectMan extends AbstractParseMan {
 
     private HeartbeatDispatcher heartbeatDispatcher;
     private PublishSubject<Message> subject;
@@ -49,31 +49,27 @@ public class ConnectMan extends AbstractParseMan{
     }
 
     @Override
-    public void send(Message message) throws IOException{
+    public void send(Message message) throws IOException {
         String messageType = message.getMessageType();
-        if (Config.MESSAGE_TYPE_CONNECT_P.equals(messageType)) {
-            sendMan.sendMessage(message);
-            heartbeatDispatcher.start();
-        } else if (Config.MESSAGE_TYPE_DISCONNECT.equals(messageType)) {
+
+        if (Config.MESSAGE_TYPE_DISCONNECT.equals(messageType)) {
             sendMan.sendMessage(message);
             MyPreferences.getInstance().putisConnected(false);
             heartbeatDispatcher.stop();
-        } else if (Config.MESSAGE_TYPE_SERVER_UDP.equals(messageType)) {
-            sendMan.sendMessage(message);
         } else {
             nextParseMan.send(message);
         }
     }
 
     @Override
-    public void receive(Message message) throws NoMatchParserMan{
+    public void receive(Message message) throws NoMatchParserMan {
         String messageType = message.getMessageType();
-        if (Config.MESSAGE_TYPE_CONNECT_P.equals(messageType)) {
-            MyPreferences.getInstance().putisConnected(true);
-            subject.onNext(message);
-        } else if (Config.MESSAGE_TYPE_DISCONNECT.equals(messageType)) {
+
+        if (Config.MESSAGE_TYPE_DISCONNECT.equals(messageType)) {
             MyPreferences.getInstance().putisConnected(false);
             heartbeatDispatcher.stop();
+            subject.onNext(message);
+        } else if (Config.MESSAGE_TYPE_LOGIN_RESULT.equals(messageType)) {
             subject.onNext(message);
         } else {
             nextParseMan.receive(message);
