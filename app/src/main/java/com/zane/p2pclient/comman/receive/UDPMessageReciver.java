@@ -41,6 +41,7 @@ public class UDPMessageReciver extends Thread implements IMessageReceiver{
         gson = new Gson();
     }
 
+    @Override
     public void finish() {
         interrupt();
     }
@@ -48,8 +49,8 @@ public class UDPMessageReciver extends Thread implements IMessageReceiver{
     @Override
     public void run() {
         super.run();
-        while (!isInterrupted()) {
-            try {
+        try {
+            while (!isInterrupted()) {
                 DatagramPacket packet = new DatagramPacket(new byte[byteLength], byteLength);
                 socket.receive(packet);
                 byte[] responseData = packet.getData();
@@ -58,11 +59,11 @@ public class UDPMessageReciver extends Thread implements IMessageReceiver{
                 Message message = gson.fromJson(rawData.substring(0, rawData.lastIndexOf("}") + 1), Message.class);
                 message.setType("receive");
                 MessageQueue.getInstance().put(message);
-            } catch (IOException e) {
-                finish();
-                if (listener != null) {
-                    listener.onFailed();
-                }
+            }
+        } catch (IOException e) {
+            finish();
+            if (listener != null) {
+                listener.onFailed();
             }
         }
     }

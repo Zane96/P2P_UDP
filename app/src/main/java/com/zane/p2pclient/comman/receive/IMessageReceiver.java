@@ -10,4 +10,6 @@ public interface IMessageReceiver {
     interface OnReceiverListener {
         void onFailed();
     }
+
+    public void finish();
 }

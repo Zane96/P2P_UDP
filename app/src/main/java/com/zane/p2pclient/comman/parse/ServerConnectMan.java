@@ -33,11 +33,8 @@ public class ServerConnectMan extends AbstractParseMan{
     private Flowable<String> flowable;
     private PublishSubject<Message> subject;
 
-    private TCPMessageReceiver receiver;
-
-    public ServerConnectMan(TCPMessageSend sendMan, TCPMessageReceiver receiver) {
+    public ServerConnectMan(TCPMessageSend sendMan) {
         this.sendMan = sendMan;
-        this.receiver = receiver;
         subject = PublishSubject.create();
         flowable = subject.toFlowable(BackpressureStrategy.LATEST).map(new Function<Message, String>() {
             @Override
@@ -56,7 +53,6 @@ public class ServerConnectMan extends AbstractParseMan{
         String messageType = message.getMessageType();
         if (Config.MESSAGE_TYPE_CONNECT.equals(messageType) || Config.MESSAGE_TYPE_QUIT.equals(messageType)) {
             sendMan.sendMessage(message);
-            receiver.read();
         } else if (Config.MESSAGE_TYPE_LOGIN.equals(messageType)) {
             //发送一个打通和服务端UDP通道的包
             Message messageUdp = new Message.Builder()
@@ -69,7 +65,6 @@ public class ServerConnectMan extends AbstractParseMan{
             MessageQueue.getInstance().put(messageUdp);
 
             sendMan.sendMessage(message);
-            receiver.read();
         } else {
             nextParseMan.send(message);
         }

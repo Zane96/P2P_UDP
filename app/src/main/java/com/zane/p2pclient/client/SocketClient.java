@@ -143,7 +143,7 @@ public class SocketClient {
         try {
             socket.close();
         } catch (IOException e) {
-            Log.i("socketclient", "TCPSocket close error: " + e.getMessage());
+            Log.e("socketclient", "TCPSocket close error: " + e.getMessage());
         }
     }
 
@@ -167,8 +167,9 @@ public class SocketClient {
                     initTCPReiver();
                 }
             });
+            tcpMessageReceiver.start();
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e("socketclient", "TCPReceive error: " + e.getMessage());
         }
     }
 
@@ -177,7 +178,7 @@ public class SocketClient {
         headParser = new ConnectMan(udpMessageSend, heartbeatDispatcher);
         AbstractParseMan heartbeatMan = new HeartbeatMan(udpMessageSend);
         AbstractParseMan sendMan = new SendMan(udpMessageSend);
-        AbstractParseMan serverConnectMan = new ServerConnectMan(tcpMessageSend, tcpMessageReceiver);
+        AbstractParseMan serverConnectMan = new ServerConnectMan(tcpMessageSend);
 
         headParser.nextParseMan = heartbeatMan;
         heartbeatMan.nextParseMan = sendMan;
